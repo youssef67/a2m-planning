@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { FormulaireIndisponibilite } from './FormulaireIndisponibilite'
 import { supprimerIndisponibilite } from '@/actions/affectations'
 import type { Ouvrier, Affectation } from '@/generated/prisma/client'
@@ -24,6 +25,7 @@ export function DialogIndisponibilite({
   isOpen,
   onClose
 }: DialogIndisponibiliteProps) {
+  const router = useRouter()
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -33,6 +35,8 @@ export function DialogIndisponibilite({
 
   const handleSuccess = () => {
     setShowSuccess(true)
+    // Force refresh to sync with server
+    router.refresh()
     setTimeout(() => {
       setShowSuccess(false)
       onClose()
@@ -48,6 +52,7 @@ export function DialogIndisponibilite({
         setDeleteError(result.error)
         setShowDeleteConfirm(false)
       } else {
+        router.refresh()
         setShowSuccess(true)
         setTimeout(() => {
           setShowSuccess(false)

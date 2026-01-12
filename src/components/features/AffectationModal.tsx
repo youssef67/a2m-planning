@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AffectationForm } from './AffectationForm'
 import type { Ouvrier } from '@/generated/prisma/client'
 
@@ -23,12 +24,15 @@ export function AffectationModal({
   isOpen,
   onClose
 }: AffectationModalProps) {
+  const router = useRouter()
   const [showSuccess, setShowSuccess] = useState(false)
 
   if (!isOpen) return null
 
   const handleSuccess = () => {
     setShowSuccess(true)
+    // Force refresh to sync with server
+    router.refresh()
     setTimeout(() => {
       setShowSuccess(false)
       onClose()

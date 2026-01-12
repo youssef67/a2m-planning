@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AffectationOuvrierForm } from './AffectationOuvrierForm'
 import type { StatutChantier } from '@/generated/prisma/client'
+import type { OptimisticAffectationAdd } from './VueOuvrierClient'
 
 interface ChantierOption {
   id: number
@@ -17,6 +19,8 @@ interface AffectationOuvrierModalProps {
   chantiers: ChantierOption[]
   isOpen: boolean
   onClose: () => void
+  onOptimisticAdd?: (affectation: OptimisticAffectationAdd) => void
+  onRefresh?: () => void
 }
 
 export function AffectationOuvrierModal({
@@ -25,14 +29,23 @@ export function AffectationOuvrierModal({
   date,
   chantiers,
   isOpen,
-  onClose
+  onClose,
+  onOptimisticAdd,
+  onRefresh
 }: AffectationOuvrierModalProps) {
+  const router = useRouter()
   const [showSuccess, setShowSuccess] = useState(false)
 
   if (!isOpen) return null
 
   const handleSuccess = () => {
     setShowSuccess(true)
+    // Force refresh to sync with server
+    if (onRefresh) {
+      onRefresh()
+    } else {
+      router.refresh()
+    }
     setTimeout(() => {
       setShowSuccess(false)
       onClose()
@@ -82,6 +95,7 @@ export function AffectationOuvrierModal({
                 chantiers={chantiers}
                 onSuccess={handleSuccess}
                 onCancel={onClose}
+                onOptimisticAdd={onOptimisticAdd}
               />
             </>
           )}

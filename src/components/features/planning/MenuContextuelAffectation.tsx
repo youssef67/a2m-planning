@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   reassignerAffectation,
   modifierPeriodeAffectation,
   supprimerAffectation,
   convertirEnIndisponibilite
 } from '@/actions/affectations'
+import { useToast } from '@/components/ui/Toast'
 import type { Periode, StatutPresence } from '@/generated/prisma/client'
 
 interface Chantier {
@@ -61,6 +63,8 @@ export function MenuContextuelAffectation({
   onClose,
   onOptimisticUpdate
 }: MenuContextuelAffectationProps) {
+  const router = useRouter()
+  const { showToast } = useToast()
   const [menuState, setMenuState] = useState<MenuState>('main')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -114,11 +118,14 @@ export function MenuContextuelAffectation({
       startTransition(async () => {
         const result = await reassignerAffectation(affectation.id, chantier.id)
         if ('error' in result && result.error) {
-          setError(result.error)
+          showToast(result.error, 'error')
+          router.refresh() // Rollback: refresh to restore original state
+        } else {
+          router.refresh()
         }
       })
     },
-    [affectation.id, onClose, onOptimisticUpdate]
+    [affectation.id, onClose, onOptimisticUpdate, router, showToast]
   )
 
   const handleModifierPeriode = useCallback(
@@ -130,11 +137,14 @@ export function MenuContextuelAffectation({
       startTransition(async () => {
         const result = await modifierPeriodeAffectation(affectation.id, periode)
         if ('error' in result && result.error) {
-          setError(result.error)
+          showToast(result.error, 'error')
+          router.refresh() // Rollback: refresh to restore original state
+        } else {
+          router.refresh()
         }
       })
     },
-    [affectation.id, onClose, onOptimisticUpdate]
+    [affectation.id, onClose, onOptimisticUpdate, router, showToast]
   )
 
   const handleSupprimer = useCallback(() => {
@@ -145,10 +155,13 @@ export function MenuContextuelAffectation({
     startTransition(async () => {
       const result = await supprimerAffectation(affectation.id)
       if ('error' in result && result.error) {
-        setError(result.error)
+        showToast(result.error, 'error')
+        router.refresh() // Rollback: refresh to restore original state
+      } else {
+        router.refresh()
       }
     })
-  }, [affectation.id, onClose, onOptimisticUpdate])
+  }, [affectation.id, onClose, onOptimisticUpdate, router, showToast])
 
   const handleConvertir = useCallback(
     (statutPresence: StatutPresence) => {
@@ -159,11 +172,14 @@ export function MenuContextuelAffectation({
       startTransition(async () => {
         const result = await convertirEnIndisponibilite(affectation.id, statutPresence)
         if ('error' in result && result.error) {
-          setError(result.error)
+          showToast(result.error, 'error')
+          router.refresh() // Rollback: refresh to restore original state
+        } else {
+          router.refresh()
         }
       })
     },
-    [affectation.id, onClose, onOptimisticUpdate]
+    [affectation.id, onClose, onOptimisticUpdate, router, showToast]
   )
 
   // Adjust position to stay within viewport

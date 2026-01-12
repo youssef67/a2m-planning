@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useOptimistic } from 'react'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { GrillePlanningOuvrier } from './GrillePlanningOuvrier'
 import { DialogIndisponibilite } from './DialogIndisponibilite'
@@ -9,6 +10,16 @@ import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutCha
 
 type AffectationData = Pick<Affectation, 'id' | 'date' | 'periode' | 'statutPresence'> & {
   chantier: Pick<Chantier, 'id' | 'nom' | 'statut'> | null
+  isOptimistic?: boolean
+}
+
+export type OptimisticAffectationAdd = {
+  id: number
+  date: Date
+  periode: Periode
+  statutPresence: StatutPresence
+  chantier: Pick<Chantier, 'id' | 'nom' | 'statut'>
+  isOptimistic: true
 }
 
 type OuvrierWithAffectations = Pick<Ouvrier, 'id' | 'nom' | 'prenom' | 'type'> & {
@@ -55,6 +66,20 @@ export function VueOuvrierClient({
   allOuvriers,
   chantiersNonTermines
 }: VueOuvrierClientProps) {
+  const router = useRouter()
+
+  // Optimistic state for affectations
+  const [optimisticAffectations, addOptimisticAffectation] = useOptimistic(
+    ouvrier.affectations,
+    (state, newAffectation: OptimisticAffectationAdd) => [...state, newAffectation]
+  )
+
+  // Create ouvrier with optimistic affectations
+  const ouvrierWithOptimistic = {
+    ...ouvrier,
+    affectations: optimisticAffectations
+  }
+
   const [dialogState, setDialogState] = useState<DialogState>({
     isOpen: false,
     mode: 'create'
@@ -117,6 +142,17 @@ export function VueOuvrierClient({
     setModalAffectation((prev) => ({ ...prev, isOpen: false }))
   }, [])
 
+  const handleOptimisticAdd = useCallback(
+    (affectation: OptimisticAffectationAdd) => {
+      addOptimisticAffectation(affectation)
+    },
+    [addOptimisticAffectation]
+  )
+
+  const handleRefresh = useCallback(() => {
+    router.refresh()
+  }, [router])
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -133,7 +169,7 @@ export function VueOuvrierClient({
       </div>
 
       <GrillePlanningOuvrier
-        ouvrier={ouvrier}
+        ouvrier={ouvrierWithOptimistic}
         joursSemaine={joursSemaine}
         onClickIndisponibilite={openEditDialog}
         onClickCelluleVide={handleClickCelluleVide}
@@ -155,6 +191,8 @@ export function VueOuvrierClient({
         chantiers={chantiersNonTermines}
         isOpen={modalAffectation.isOpen}
         onClose={closeModalAffectation}
+        onOptimisticAdd={handleOptimisticAdd}
+        onRefresh={handleRefresh}
       />
     </div>
   )

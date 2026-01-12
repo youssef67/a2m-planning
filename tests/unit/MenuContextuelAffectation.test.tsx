@@ -2,6 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MenuContextuelAffectation } from '@/components/features/planning/MenuContextuelAffectation'
 
+// Mock next/navigation
+const mockRefresh = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: mockRefresh
+  })
+}))
+
+// Mock Toast
+const mockShowToast = vi.fn()
+vi.mock('@/components/ui/Toast', () => ({
+  useToast: () => ({
+    showToast: mockShowToast
+  })
+}))
+
 // Mock server actions
 vi.mock('@/actions/affectations', () => ({
   reassignerAffectation: vi.fn().mockResolvedValue({ success: true }),
@@ -38,6 +54,8 @@ const defaultProps = {
 describe('MenuContextuelAffectation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRefresh.mockClear()
+    mockShowToast.mockClear()
   })
 
   describe('Main menu rendering (AC2)', () => {

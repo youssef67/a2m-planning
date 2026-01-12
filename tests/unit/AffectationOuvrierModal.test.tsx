@@ -1,6 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AffectationOuvrierModal } from '@/components/features/planning/AffectationOuvrierModal'
+
+// Mock next/navigation
+const mockRefresh = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: mockRefresh
+  })
+}))
 
 // Mock server actions
 vi.mock('@/actions/affectations', () => ({
@@ -13,6 +21,11 @@ const mockChantiers = [
 ]
 
 describe('AffectationOuvrierModal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRefresh.mockClear()
+  })
+
   it('should not render when isOpen is false', () => {
     render(
       <AffectationOuvrierModal

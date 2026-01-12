@@ -1,6 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { DialogIndisponibilite } from '@/components/features/planning/DialogIndisponibilite'
+
+// Mock next/navigation
+const mockRefresh = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: mockRefresh
+  })
+}))
 
 // Mock server actions
 vi.mock('@/actions/affectations', () => ({
@@ -15,6 +23,11 @@ const mockOuvriers = [
 ]
 
 describe('DialogIndisponibilite', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRefresh.mockClear()
+  })
+
   it('should not render when isOpen is false', () => {
     render(
       <DialogIndisponibilite

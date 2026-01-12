@@ -3,7 +3,8 @@
 import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
 import { creerAffectation } from '@/actions/affectations'
-import type { StatutChantier } from '@/generated/prisma/client'
+import type { StatutChantier, Periode, StatutPresence } from '@/generated/prisma/client'
+import type { OptimisticAffectationAdd } from './VueOuvrierClient'
 
 type FormState = { error?: string; success?: boolean } | null
 
@@ -19,6 +20,7 @@ interface AffectationOuvrierFormProps {
   chantiers: ChantierOption[]
   onSuccess?: () => void
   onCancel?: () => void
+  onOptimisticAdd?: (affectation: OptimisticAffectationAdd) => void
 }
 
 export function AffectationOuvrierForm({
@@ -26,12 +28,36 @@ export function AffectationOuvrierForm({
   date,
   chantiers,
   onSuccess,
-  onCancel
+  onCancel,
+  onOptimisticAdd
 }: AffectationOuvrierFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
 
   const [state, formAction, isPending] = useActionState<FormState, FormData>(
     async (_prevState, formData) => {
+      // Trigger optimistic update before server action
+      if (onOptimisticAdd) {
+        const chantierId = Number(formData.get('chantierId'))
+        const dateValue = formData.get('date') as string
+        const periode = (formData.get('periode') as Periode) || 'JOURNEE'
+        const chantier = chantiers.find((c) => c.id === chantierId)
+
+        if (chantier) {
+          onOptimisticAdd({
+            id: -Date.now(), // Temporary negative ID for optimistic entry
+            date: new Date(dateValue),
+            periode,
+            statutPresence: 'PRESENT' as StatutPresence,
+            chantier: {
+              id: chantier.id,
+              nom: chantier.nom,
+              statut: chantier.statut
+            },
+            isOptimistic: true
+          })
+        }
+      }
+
       const result = await creerAffectation(formData)
       return result
     },
