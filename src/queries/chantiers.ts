@@ -44,3 +44,14 @@ export async function getChantierById(id: number) {
     where: { id }
   })
 }
+
+export const getChantiersNonTermines = unstable_cache(
+  async () => {
+    return prisma.chantier.findMany({
+      where: { statut: { in: ['ACTIF', 'EN_PAUSE'] } },
+      orderBy: [{ statut: 'asc' }, { nom: 'asc' }]
+    })
+  },
+  ['chantiers-non-termines'],
+  { revalidate: 60, tags: ['chantiers'] }
+)

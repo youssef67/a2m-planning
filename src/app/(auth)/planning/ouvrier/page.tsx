@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid } from 'date-fns'
 import { getOuvriersPlanningAvecAffectations } from '@/queries/affectations'
+import { getChantiersNonTermines } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { ListeOuvriers } from '@/components/features/planning/ListeOuvriers'
@@ -45,7 +46,12 @@ async function PlanningContent({
   ouvrierId: number | null
 }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
-  const ouvriers = await getOuvriersPlanningAvecAffectations(weekStart, weekEnd)
+
+  // Fetch ouvriers and chantiers in parallel
+  const [ouvriers, chantiersNonTermines] = await Promise.all([
+    getOuvriersPlanningAvecAffectations(weekStart, weekEnd),
+    getChantiersNonTermines()
+  ])
 
   const selectedOuvrier = ouvrierId
     ? ouvriers.find((o) => o.id === ouvrierId)
@@ -73,6 +79,7 @@ async function PlanningContent({
               nom: o.nom,
               prenom: o.prenom
             }))}
+            chantiersNonTermines={chantiersNonTermines}
           />
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">

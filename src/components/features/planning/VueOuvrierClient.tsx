@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { format } from 'date-fns'
 import { GrillePlanningOuvrier } from './GrillePlanningOuvrier'
 import { DialogIndisponibilite } from './DialogIndisponibilite'
+import { AffectationOuvrierModal } from './AffectationOuvrierModal'
 import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 
 type AffectationData = Pick<Affectation, 'id' | 'date' | 'periode' | 'statutPresence'> & {
@@ -13,13 +15,27 @@ type OuvrierWithAffectations = Pick<Ouvrier, 'id' | 'nom' | 'prenom' | 'type'> &
   affectations: AffectationData[]
 }
 
+interface ChantierOption {
+  id: number
+  nom: string
+  statut: StatutChantier
+}
+
 interface VueOuvrierClientProps {
   ouvrier: OuvrierWithAffectations
   joursSemaine: Date[]
   allOuvriers: Pick<Ouvrier, 'id' | 'nom' | 'prenom'>[]
+  chantiersNonTermines: ChantierOption[]
 }
 
 type DialogMode = 'create' | 'edit'
+
+interface ModalAffectationState {
+  isOpen: boolean
+  ouvrierId: number
+  ouvrierNom: string
+  date: string
+}
 
 interface DialogState {
   isOpen: boolean
@@ -36,11 +52,19 @@ interface DialogState {
 export function VueOuvrierClient({
   ouvrier,
   joursSemaine,
-  allOuvriers
+  allOuvriers,
+  chantiersNonTermines
 }: VueOuvrierClientProps) {
   const [dialogState, setDialogState] = useState<DialogState>({
     isOpen: false,
     mode: 'create'
+  })
+
+  const [modalAffectation, setModalAffectation] = useState<ModalAffectationState>({
+    isOpen: false,
+    ouvrierId: 0,
+    ouvrierNom: '',
+    date: ''
   })
 
   const openCreateDialog = () => {
@@ -77,6 +101,22 @@ export function VueOuvrierClient({
     })
   }
 
+  const handleClickCelluleVide = useCallback(
+    (ouvrierId: number, ouvrierNom: string, date: Date) => {
+      setModalAffectation({
+        isOpen: true,
+        ouvrierId,
+        ouvrierNom,
+        date: format(date, 'yyyy-MM-dd')
+      })
+    },
+    []
+  )
+
+  const closeModalAffectation = useCallback(() => {
+    setModalAffectation((prev) => ({ ...prev, isOpen: false }))
+  }, [])
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -96,6 +136,7 @@ export function VueOuvrierClient({
         ouvrier={ouvrier}
         joursSemaine={joursSemaine}
         onClickIndisponibilite={openEditDialog}
+        onClickCelluleVide={handleClickCelluleVide}
       />
 
       <DialogIndisponibilite
@@ -105,6 +146,15 @@ export function VueOuvrierClient({
         indisponibilite={dialogState.indisponibilite}
         isOpen={dialogState.isOpen}
         onClose={closeDialog}
+      />
+
+      <AffectationOuvrierModal
+        ouvrierId={modalAffectation.ouvrierId}
+        ouvrierNom={modalAffectation.ouvrierNom}
+        date={modalAffectation.date}
+        chantiers={chantiersNonTermines}
+        isOpen={modalAffectation.isOpen}
+        onClose={closeModalAffectation}
       />
     </div>
   )

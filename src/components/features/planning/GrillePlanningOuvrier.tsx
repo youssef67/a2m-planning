@@ -27,11 +27,23 @@ interface GrillePlanningOuvrierProps {
   ouvrier: OuvrierWithAffectations
   joursSemaine: Date[]
   onClickIndisponibilite?: (affectation: AffectationData) => void
+  onClickCelluleVide?: (ouvrierId: number, ouvrierNom: string, date: Date) => void
 }
 
-export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponibilite }: GrillePlanningOuvrierProps) {
+export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponibilite, onClickCelluleVide }: GrillePlanningOuvrierProps) {
   const getAffectationsForDay = (day: Date) => {
     return ouvrier.affectations.filter((a) => isSameDay(new Date(a.date), day))
+  }
+
+  // Check if a day can accept a new affectation (no JOURNEE affectation blocking it)
+  const canAddAffectation = (affectations: AffectationData[]) => {
+    return !affectations.some((a) => a.periode === 'JOURNEE')
+  }
+
+  const handleCellClick = (day: Date, affectations: AffectationData[]) => {
+    if (onClickCelluleVide && canAddAffectation(affectations)) {
+      onClickCelluleVide(ouvrier.id, `${ouvrier.prenom} ${ouvrier.nom}`, day)
+    }
   }
 
   const today = new Date()
@@ -49,6 +61,7 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
         {joursSemaine.map((jour) => {
           const affectations = getAffectationsForDay(jour)
           const isToday = isSameDay(jour, today)
+          const canAdd = canAddAffectation(affectations)
 
           return (
             <div key={jour.toISOString()} className="min-h-[120px]">
@@ -66,21 +79,37 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
                 </div>
               </div>
 
-              <div className="p-2 space-y-2">
+              <div
+                className={clsx(
+                  'group p-2 space-y-2 min-h-[80px] relative',
+                  canAdd && onClickCelluleVide && 'cursor-pointer hover:bg-gray-50 transition-colors'
+                )}
+                onClick={() => handleCellClick(jour, affectations)}
+              >
                 {affectations.length > 0 ? (
                   affectations.map((affectation) => (
-                    <CarteAffectationOuvrier
+                    <div
                       key={affectation.id}
-                      affectation={affectation}
-                      onClick={affectation.chantier === null && onClickIndisponibilite
-                        ? () => onClickIndisponibilite(affectation)
-                        : undefined}
-                    />
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CarteAffectationOuvrier
+                        affectation={affectation}
+                        onClick={affectation.chantier === null && onClickIndisponibilite
+                          ? () => onClickIndisponibilite(affectation)
+                          : undefined}
+                      />
+                    </div>
                   ))
                 ) : (
                   <div className="text-xs text-gray-400 text-center py-4">
                     —
                   </div>
+                )}
+                {/* Hover indicator "+" */}
+                {canAdd && onClickCelluleVide && (
+                  <span className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-2xl text-gray-300 group-hover:text-gray-400">+</span>
+                  </span>
                 )}
               </div>
             </div>
@@ -93,9 +122,17 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
         {joursSemaine.map((jour) => {
           const affectations = getAffectationsForDay(jour)
           const isToday = isSameDay(jour, today)
+          const canAdd = canAddAffectation(affectations)
 
           return (
-            <div key={jour.toISOString()} className="p-3">
+            <div
+              key={jour.toISOString()}
+              className={clsx(
+                'p-3 relative',
+                canAdd && onClickCelluleVide && 'cursor-pointer active:bg-gray-50'
+              )}
+              onClick={() => handleCellClick(jour, affectations)}
+            >
               <div
                 className={clsx(
                   'text-sm font-medium mb-2 capitalize',
@@ -109,17 +146,26 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
               {affectations.length > 0 ? (
                 <div className="space-y-2">
                   {affectations.map((affectation) => (
-                    <CarteAffectationOuvrier
+                    <div
                       key={affectation.id}
-                      affectation={affectation}
-                      onClick={affectation.chantier === null && onClickIndisponibilite
-                        ? () => onClickIndisponibilite(affectation)
-                        : undefined}
-                    />
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CarteAffectationOuvrier
+                        affectation={affectation}
+                        onClick={affectation.chantier === null && onClickIndisponibilite
+                          ? () => onClickIndisponibilite(affectation)
+                          : undefined}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-400">Pas d&apos;affectation</div>
+                <div className="text-sm text-gray-400 flex items-center justify-between">
+                  <span>Pas d&apos;affectation</span>
+                  {canAdd && onClickCelluleVide && (
+                    <span className="text-xl text-gray-300">+</span>
+                  )}
+                </div>
               )}
             </div>
           )

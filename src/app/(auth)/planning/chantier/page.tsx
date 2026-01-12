@@ -1,7 +1,8 @@
 import { Suspense } from 'react'
-import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid } from 'date-fns'
-import { getChantiersPlanningAvecAffectations } from '@/queries/affectations'
+import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format } from 'date-fns'
+import { getChantiersPlanningAvecAffectations, getOuvriersIndisponibles } from '@/queries/affectations'
 import { getChantiersActifs } from '@/queries/chantiers'
+import { getOuvriersActifs } from '@/queries/ouvriers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { VueChantierClient } from '@/components/features/planning/VueChantierClient'
@@ -33,16 +34,35 @@ function getWeekDates(semaineParam?: string) {
 
 async function PlanningContent({ semaine }: { semaine?: string }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
-  const [chantiers, chantiersActifs] = await Promise.all([
+
+  // Fetch all data in parallel
+  const [chantiers, chantiersActifs, ouvriersActifs] = await Promise.all([
     getChantiersPlanningAvecAffectations(weekStart, weekEnd),
-    getChantiersActifs()
+    getChantiersActifs(),
+    getOuvriersActifs()
   ])
+
+  // Fetch indisponibilités for each day of the week (for JOURNEE period)
+  const indisponibilitesPromises = days.map(async (day) => {
+    const indispo = await getOuvriersIndisponibles(day, 'JOURNEE')
+    return { date: format(day, 'yyyy-MM-dd'), indispo }
+  })
+
+  const indisponibilitesResults = await Promise.all(indisponibilitesPromises)
+
+  // Build map: dateString -> Record<ouvrierId, statutPresence>
+  const indisponiblesByDate: Record<string, Record<number, string>> = {}
+  for (const { date, indispo } of indisponibilitesResults) {
+    indisponiblesByDate[date] = indispo
+  }
 
   return (
     <VueChantierClient
       chantiers={chantiers}
       chantiersActifs={chantiersActifs}
       joursSemaine={days}
+      ouvriersActifs={ouvriersActifs}
+      indisponiblesByDate={indisponiblesByDate}
     />
   )
 }
