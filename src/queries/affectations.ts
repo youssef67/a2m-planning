@@ -131,3 +131,79 @@ const createGetOuvriersPlanningAvecAffectations = (dateDebut: Date, dateFin: Dat
 export async function getOuvriersPlanningAvecAffectations(dateDebut: Date, dateFin: Date) {
   return createGetOuvriersPlanningAvecAffectations(dateDebut, dateFin)()
 }
+
+const createGetOuvrierDisponibilite = (ouvrierId: number, date: Date, periode: string) =>
+  unstable_cache(
+    async () => {
+      // Check if ouvrier has an indisponibilité (chantierId is null AND statutPresence is not TRAVAIL)
+      const indisponibilite = await prisma.affectation.findFirst({
+        where: {
+          ouvrierId,
+          date,
+          chantierId: null,
+          statutPresence: { not: 'TRAVAIL' },
+          OR: [
+            { periode: 'JOURNEE' },
+            { periode: periode as 'MATIN' | 'APRES_MIDI' | 'JOURNEE' }
+          ]
+        }
+      })
+
+      // Also check if JOURNEE indisponibilité blocks MATIN/APRES_MIDI
+      if (!indisponibilite && periode !== 'JOURNEE') {
+        const journeeIndispo = await prisma.affectation.findFirst({
+          where: {
+            ouvrierId,
+            date,
+            chantierId: null,
+            statutPresence: { not: 'TRAVAIL' },
+            periode: 'JOURNEE'
+          }
+        })
+        return { disponible: !journeeIndispo, indisponibilite: journeeIndispo }
+      }
+
+      return { disponible: !indisponibilite, indisponibilite }
+    },
+    ['ouvrier-disponibilite', String(ouvrierId), date.toISOString(), periode],
+    { revalidate: 60, tags: ['affectations'] }
+  )
+
+export async function getOuvrierDisponibilite(ouvrierId: number, date: Date, periode: string) {
+  return createGetOuvrierDisponibilite(ouvrierId, date, periode)()
+}
+
+const createGetOuvriersIndisponibles = (date: Date, periode: string) =>
+  unstable_cache(
+    async () => {
+      // Get all ouvriers with indisponibilités for this date/periode
+      const indisponibilites = await prisma.affectation.findMany({
+        where: {
+          date,
+          chantierId: null,
+          statutPresence: { not: 'TRAVAIL' },
+          OR: [
+            { periode: 'JOURNEE' },
+            { periode: periode as 'MATIN' | 'APRES_MIDI' | 'JOURNEE' }
+          ]
+        },
+        select: {
+          ouvrierId: true,
+          statutPresence: true
+        }
+      })
+
+      // Return a map of ouvrierId -> statutPresence
+      const indispoMap: Record<number, string> = {}
+      for (const indispo of indisponibilites) {
+        indispoMap[indispo.ouvrierId] = indispo.statutPresence
+      }
+      return indispoMap
+    },
+    ['ouvriers-indisponibles', date.toISOString(), periode],
+    { revalidate: 60, tags: ['affectations'] }
+  )
+
+export async function getOuvriersIndisponibles(date: Date, periode: string) {
+  return createGetOuvriersIndisponibles(date, periode)()
+}

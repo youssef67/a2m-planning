@@ -4,7 +4,7 @@ import { getOuvriersPlanningAvecAffectations } from '@/queries/affectations'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { ListeOuvriers } from '@/components/features/planning/ListeOuvriers'
-import { GrillePlanningOuvrier } from '@/components/features/planning/GrillePlanningOuvrier'
+import { VueOuvrierClient } from '@/components/features/planning/VueOuvrierClient'
 
 export const metadata = {
   title: 'Planning par ouvrier - A2M Planning'
@@ -65,9 +65,14 @@ async function PlanningContent({
 
       <div className="flex-1">
         {selectedOuvrier ? (
-          <GrillePlanningOuvrier
+          <VueOuvrierClient
             ouvrier={selectedOuvrier}
             joursSemaine={days}
+            allOuvriers={ouvriers.map((o) => ({
+              id: o.id,
+              nom: o.nom,
+              prenom: o.prenom
+            }))}
           />
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">

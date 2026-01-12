@@ -9,6 +9,7 @@ interface AffectationModalProps {
   chantierNom: string
   date?: string
   ouvriers: Pick<Ouvrier, 'id' | 'nom' | 'prenom' | 'type'>[]
+  indisponibles?: Record<number, string>
   isOpen: boolean
   onClose: () => void
 }
@@ -18,6 +19,7 @@ export function AffectationModal({
   chantierNom,
   date,
   ouvriers,
+  indisponibles,
   isOpen,
   onClose
 }: AffectationModalProps) {
@@ -74,6 +76,7 @@ export function AffectationModal({
                 chantierId={chantierId}
                 date={date}
                 ouvriers={ouvriers}
+                indisponibles={indisponibles}
                 onSuccess={handleSuccess}
                 onCancel={onClose}
               />

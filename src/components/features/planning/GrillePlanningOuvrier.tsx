@@ -26,9 +26,10 @@ interface OuvrierWithAffectations {
 interface GrillePlanningOuvrierProps {
   ouvrier: OuvrierWithAffectations
   joursSemaine: Date[]
+  onClickIndisponibilite?: (affectation: AffectationData) => void
 }
 
-export function GrillePlanningOuvrier({ ouvrier, joursSemaine }: GrillePlanningOuvrierProps) {
+export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponibilite }: GrillePlanningOuvrierProps) {
   const getAffectationsForDay = (day: Date) => {
     return ouvrier.affectations.filter((a) => isSameDay(new Date(a.date), day))
   }
@@ -71,6 +72,9 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine }: GrillePlanningO
                     <CarteAffectationOuvrier
                       key={affectation.id}
                       affectation={affectation}
+                      onClick={affectation.chantier === null && onClickIndisponibilite
+                        ? () => onClickIndisponibilite(affectation)
+                        : undefined}
                     />
                   ))
                 ) : (
@@ -108,6 +112,9 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine }: GrillePlanningO
                     <CarteAffectationOuvrier
                       key={affectation.id}
                       affectation={affectation}
+                      onClick={affectation.chantier === null && onClickIndisponibilite
+                        ? () => onClickIndisponibilite(affectation)
+                        : undefined}
                     />
                   ))}
                 </div>
