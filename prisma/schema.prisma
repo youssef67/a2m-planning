@@ -21,3 +21,26 @@ model Session {
   @@index([expiresAt])
   @@map("sessions")
 }
+
+enum TypeOuvrier {
+  SALARIE
+  SOUS_TRAITANT
+}
+
+enum StatutOuvrier {
+  ACTIF
+  ARCHIVE
+}
+
+model Ouvrier {
+  id        Int           @id @default(autoincrement())
+  nom       String        @db.VarChar(100)
+  prenom    String        @db.VarChar(100)
+  type      TypeOuvrier
+  statut    StatutOuvrier @default(ACTIF)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([statut])
+  @@map("ouvriers")
+}
