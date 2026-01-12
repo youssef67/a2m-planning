@@ -228,3 +228,176 @@ export async function supprimerIndisponibilite(id: number) {
     return { error: "Erreur lors de la suppression de l'indisponibilité" }
   }
 }
+
+export async function reassignerAffectation(affectationId: number, nouveauChantierId: number) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  // Validate affectation exists and is not an indisponibilité
+  const existing = await prisma.affectation.findUnique({
+    where: { id: affectationId }
+  })
+
+  if (!existing) {
+    return { error: "L'affectation n'existe pas" }
+  }
+
+  if (existing.chantierId === null) {
+    return { error: 'Impossible de réaffecter une indisponibilité' }
+  }
+
+  // Validate new chantier exists and is not TERMINE
+  const chantier = await prisma.chantier.findUnique({
+    where: { id: nouveauChantierId }
+  })
+
+  if (!chantier) {
+    return { error: "Le chantier n'existe pas" }
+  }
+
+  if (chantier.statut === 'TERMINE') {
+    return { error: 'Impossible de réaffecter vers un chantier terminé' }
+  }
+
+  const updated = await prisma.affectation.update({
+    where: { id: affectationId },
+    data: { chantierId: nouveauChantierId }
+  })
+
+  await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
+  revalidatePath('/planning')
+  return { success: true, affectation: updated }
+}
+
+export async function modifierPeriodeAffectation(affectationId: number, nouvellePeriode: Periode) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  // Validate affectation exists
+  const existing = await prisma.affectation.findUnique({
+    where: { id: affectationId }
+  })
+
+  if (!existing) {
+    return { error: "L'affectation n'existe pas" }
+  }
+
+  // Check for unique constraint violation (same ouvrier, date, new periode)
+  const conflict = await prisma.affectation.findFirst({
+    where: {
+      ouvrierId: existing.ouvrierId,
+      date: existing.date,
+      periode: nouvellePeriode,
+      id: { not: affectationId }
+    }
+  })
+
+  if (conflict) {
+    return { error: 'Une affectation existe déjà pour cette période' }
+  }
+
+  // Check if target period is blocked by an indisponibilité
+  const indisponibilite = await prisma.affectation.findFirst({
+    where: {
+      ouvrierId: existing.ouvrierId,
+      date: existing.date,
+      chantierId: null,
+      statutPresence: { not: 'TRAVAIL' },
+      OR: [
+        { periode: 'JOURNEE' },
+        { periode: nouvellePeriode }
+      ],
+      id: { not: affectationId }
+    }
+  })
+
+  if (indisponibilite) {
+    return { error: "L'ouvrier est indisponible pour cette période" }
+  }
+
+  try {
+    const updated = await prisma.affectation.update({
+      where: { id: affectationId },
+      data: { periode: nouvellePeriode }
+    })
+
+    await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
+    revalidatePath('/planning')
+    return { success: true, affectation: updated }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2002'
+    ) {
+      return { error: 'Conflit avec une affectation existante pour cette période' }
+    }
+    return { error: 'Erreur lors de la modification de la période' }
+  }
+}
+
+export async function supprimerAffectation(id: number) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  // Validate affectation exists and is a work assignment (chantierId is not null)
+  const existing = await prisma.affectation.findUnique({
+    where: { id }
+  })
+
+  if (!existing) {
+    return { error: "L'affectation n'existe pas" }
+  }
+
+  if (existing.chantierId === null) {
+    return { error: "Utilisez supprimerIndisponibilite pour les indisponibilités" }
+  }
+
+  try {
+    await prisma.affectation.delete({
+      where: { id }
+    })
+
+    await logModification('DELETE', 'Affectation', id, existing, null)
+    revalidatePath('/planning')
+    return { success: true }
+  } catch {
+    return { error: "Erreur lors de la suppression de l'affectation" }
+  }
+}
+
+export async function convertirEnIndisponibilite(affectationId: number, statutPresence: StatutPresence) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  // Validate statutPresence is a valid indisponibilité type
+  const validStatuts: StatutPresence[] = ['CONGE_PAYE', 'MALADIE', 'ABSENCE', 'FORMATION']
+  if (!validStatuts.includes(statutPresence)) {
+    return { error: 'Statut de présence invalide' }
+  }
+
+  // Validate affectation exists and is a work assignment
+  const existing = await prisma.affectation.findUnique({
+    where: { id: affectationId }
+  })
+
+  if (!existing) {
+    return { error: "L'affectation n'existe pas" }
+  }
+
+  if (existing.chantierId === null) {
+    return { error: "Cette affectation est déjà une indisponibilité" }
+  }
+
+  const updated = await prisma.affectation.update({
+    where: { id: affectationId },
+    data: {
+      chantierId: null,
+      statutPresence
+    }
+  })
+
+  await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
+  revalidatePath('/planning')
+  return { success: true, affectation: updated }
+}

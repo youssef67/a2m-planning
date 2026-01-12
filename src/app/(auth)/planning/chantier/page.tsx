@@ -1,9 +1,10 @@
 import { Suspense } from 'react'
 import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid } from 'date-fns'
 import { getChantiersPlanningAvecAffectations } from '@/queries/affectations'
+import { getChantiersActifs } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
-import { GrillePlanningChantier } from '@/components/features/planning/GrillePlanningChantier'
+import { VueChantierClient } from '@/components/features/planning/VueChantierClient'
 
 export const metadata = {
   title: 'Planning par chantier - A2M Planning'
@@ -32,11 +33,15 @@ function getWeekDates(semaineParam?: string) {
 
 async function PlanningContent({ semaine }: { semaine?: string }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
-  const chantiers = await getChantiersPlanningAvecAffectations(weekStart, weekEnd)
+  const [chantiers, chantiersActifs] = await Promise.all([
+    getChantiersPlanningAvecAffectations(weekStart, weekEnd),
+    getChantiersActifs()
+  ])
 
   return (
-    <GrillePlanningChantier
+    <VueChantierClient
       chantiers={chantiers}
+      chantiersActifs={chantiersActifs}
       joursSemaine={days}
     />
   )
