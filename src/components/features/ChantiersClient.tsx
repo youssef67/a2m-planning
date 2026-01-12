@@ -1,24 +1,28 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import type { Chantier, StatutChantier } from '@/generated/prisma/client'
+import type { Chantier, Ouvrier, StatutChantier } from '@/generated/prisma/client'
 import { ChantierForm } from './ChantierForm'
 import { ChantierListItem } from './ChantierListItem'
 import { ChantierStatutModal } from './ChantierStatutModal'
+import { AffectationModal } from './AffectationModal'
 
 type FilterValue = StatutChantier | 'TOUS'
 
 interface ChantiersClientProps {
   chantiers: Chantier[]
+  ouvriers: Pick<Ouvrier, 'id' | 'nom' | 'prenom' | 'type'>[]
 }
 
-export function ChantiersClient({ chantiers }: ChantiersClientProps) {
+export function ChantiersClient({ chantiers, ouvriers }: ChantiersClientProps) {
   const [filter, setFilter] = useState<FilterValue>('ACTIF')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingChantier, setEditingChantier] = useState<Chantier | null>(null)
   const [statutModalOpen, setStatutModalOpen] = useState(false)
   const [statutChantier, setStatutChantier] = useState<Chantier | null>(null)
   const [targetStatut, setTargetStatut] = useState<StatutChantier | null>(null)
+  const [affectationModalOpen, setAffectationModalOpen] = useState(false)
+  const [affectationChantier, setAffectationChantier] = useState<Chantier | null>(null)
 
   const filteredChantiers = useMemo(() => {
     if (filter === 'TOUS') return chantiers
@@ -50,6 +54,16 @@ export function ChantiersClient({ chantiers }: ChantiersClientProps) {
     setStatutModalOpen(false)
     setStatutChantier(null)
     setTargetStatut(null)
+  }, [])
+
+  const openAffectationModal = useCallback((chantier: Chantier) => {
+    setAffectationChantier(chantier)
+    setAffectationModalOpen(true)
+  }, [])
+
+  const closeAffectationModal = useCallback(() => {
+    setAffectationModalOpen(false)
+    setAffectationChantier(null)
   }, [])
 
   return (
@@ -96,6 +110,7 @@ export function ChantiersClient({ chantiers }: ChantiersClientProps) {
               chantier={chantier}
               onEdit={openEditModal}
               onChangeStatut={openStatutModal}
+              onAddAffectation={openAffectationModal}
             />
           ))}
         </div>
@@ -129,6 +144,17 @@ export function ChantiersClient({ chantiers }: ChantiersClientProps) {
           chantier={statutChantier}
           targetStatut={targetStatut}
           onClose={closeStatutModal}
+        />
+      )}
+
+      {/* Modal Affectation */}
+      {affectationChantier && (
+        <AffectationModal
+          chantierId={affectationChantier.id}
+          chantierNom={affectationChantier.nom}
+          ouvriers={ouvriers}
+          isOpen={affectationModalOpen}
+          onClose={closeAffectationModal}
         />
       )}
     </div>

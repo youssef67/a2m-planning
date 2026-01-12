@@ -22,6 +22,20 @@ model Session {
   @@map("sessions")
 }
 
+enum Periode {
+  JOURNEE
+  MATIN
+  APRES_MIDI
+}
+
+enum StatutPresence {
+  TRAVAIL
+  CONGE_PAYE
+  MALADIE
+  ABSENCE
+  FORMATION
+}
+
 enum TypeOuvrier {
   SALARIE
   SOUS_TRAITANT
@@ -33,13 +47,14 @@ enum StatutOuvrier {
 }
 
 model Ouvrier {
-  id        Int           @id @default(autoincrement())
-  nom       String        @db.VarChar(100)
-  prenom    String        @db.VarChar(100)
-  type      TypeOuvrier
-  statut    StatutOuvrier @default(ACTIF)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id           Int           @id @default(autoincrement())
+  nom          String        @db.VarChar(100)
+  prenom       String        @db.VarChar(100)
+  type         TypeOuvrier
+  statut       StatutOuvrier @default(ACTIF)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  affectations Affectation[]
 
   @@index([statut])
   @@map("ouvriers")
@@ -52,13 +67,32 @@ enum StatutChantier {
 }
 
 model Chantier {
-  id          Int            @id @default(autoincrement())
-  nom         String         @db.VarChar(200)
-  statut      StatutChantier @default(ACTIF)
-  raisonPause String?        @db.VarChar(500)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id           Int            @id @default(autoincrement())
+  nom          String         @db.VarChar(200)
+  statut       StatutChantier @default(ACTIF)
+  raisonPause  String?        @db.VarChar(500)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  affectations Affectation[]
 
   @@index([statut])
   @@map("chantiers")
+}
+
+model Affectation {
+  id             Int            @id @default(autoincrement())
+  ouvrierId      Int
+  chantierId     Int?
+  date           DateTime       @db.Date
+  periode        Periode
+  statutPresence StatutPresence @default(TRAVAIL)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  ouvrier        Ouvrier        @relation(fields: [ouvrierId], references: [id], onDelete: Cascade)
+  chantier       Chantier?      @relation(fields: [chantierId], references: [id], onDelete: SetNull)
+
+  @@unique([ouvrierId, date, periode])
+  @@index([date])
+  @@index([chantierId, date])
+  @@map("affectations")
 }

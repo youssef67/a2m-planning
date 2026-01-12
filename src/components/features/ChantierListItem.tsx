@@ -6,6 +6,7 @@ interface ChantierListItemProps {
   chantier: Chantier
   onEdit: (chantier: Chantier) => void
   onChangeStatut: (chantier: Chantier, statut: StatutChantier) => void
+  onAddAffectation: (chantier: Chantier) => void
 }
 
 const statutBadgeClasses: Record<StatutChantier, string> = {
@@ -20,10 +21,11 @@ const statutLabels: Record<StatutChantier, string> = {
   TERMINE: 'Terminé'
 }
 
-export function ChantierListItem({ chantier, onEdit, onChangeStatut }: ChantierListItemProps) {
+export function ChantierListItem({ chantier, onEdit, onChangeStatut, onAddAffectation }: ChantierListItemProps) {
   const isTermine = chantier.statut === 'TERMINE'
   const isActif = chantier.statut === 'ACTIF'
   const isEnPause = chantier.statut === 'EN_PAUSE'
+  const canAddAffectation = isActif || isEnPause
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-white border border-gray-200 rounded-lg">
@@ -44,6 +46,15 @@ export function ChantierListItem({ chantier, onEdit, onChangeStatut }: ChantierL
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
+        {canAddAffectation && (
+          <button
+            type="button"
+            onClick={() => onAddAffectation(chantier)}
+            className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            + Affectation
+          </button>
+        )}
         {!isTermine && (
           <>
             <button
