@@ -12,3 +12,12 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Session {
+  id        String   @id @db.VarChar(64) // nanoid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("sessions")
+}

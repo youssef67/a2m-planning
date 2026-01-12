@@ -9,10 +9,16 @@ export default defineConfig({
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['@prisma/client'],
+      },
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@/generated/prisma': path.resolve(__dirname, './src/generated/prisma/client.ts'),
     },
   },
 });
