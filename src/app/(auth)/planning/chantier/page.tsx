@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid } from 'date-fns'
 import { getChantiersPlanningAvecAffectations } from '@/queries/affectations'
+import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { GrillePlanningChantier } from '@/components/features/planning/GrillePlanningChantier'
 
@@ -51,6 +52,7 @@ export default async function PlanningChantierPage({ searchParams }: PageProps) 
         Planning par chantier
       </h1>
 
+      <NavigationOnglets />
       <NavigationSemaine />
 
       <Suspense

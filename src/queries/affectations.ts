@@ -94,3 +94,40 @@ const createGetChantiersPlanningAvecAffectations = (dateDebut: Date, dateFin: Da
 export async function getChantiersPlanningAvecAffectations(dateDebut: Date, dateFin: Date) {
   return createGetChantiersPlanningAvecAffectations(dateDebut, dateFin)()
 }
+
+const createGetOuvriersPlanningAvecAffectations = (dateDebut: Date, dateFin: Date) =>
+  unstable_cache(
+    async () => {
+      return prisma.ouvrier.findMany({
+        where: {
+          statut: 'ACTIF'
+        },
+        include: {
+          affectations: {
+            where: {
+              date: {
+                gte: dateDebut,
+                lte: dateFin
+              }
+            },
+            include: {
+              chantier: {
+                select: { id: true, nom: true, statut: true }
+              }
+            },
+            orderBy: { date: 'asc' }
+          }
+        },
+        orderBy: [
+          { nom: 'asc' },
+          { prenom: 'asc' }
+        ]
+      })
+    },
+    ['ouvriers-planning', dateDebut.toISOString(), dateFin.toISOString()],
+    { revalidate: 60, tags: ['ouvriers', 'affectations'] }
+  )
+
+export async function getOuvriersPlanningAvecAffectations(dateDebut: Date, dateFin: Date) {
+  return createGetOuvriersPlanningAvecAffectations(dateDebut, dateFin)()
+}
