@@ -6,7 +6,8 @@ import { clsx } from 'clsx'
 
 const onglets = [
   { href: '/planning/chantier', label: 'Vue Chantier' },
-  { href: '/planning/ouvrier', label: 'Vue Ouvrier' }
+  { href: '/planning/ouvrier', label: 'Vue Ouvrier' },
+  { href: '/planning/comptage', label: 'Comptage' }
 ] as const
 
 export function NavigationOnglets() {
