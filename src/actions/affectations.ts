@@ -4,7 +4,7 @@ import { revalidateTag, revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { creerAffectationSchema, creerAffectationsEnMasseSchema } from '@/schemas/affectation'
-import { indisponibiliteSchema, modifierIndisponibiliteSchema } from '@/schemas/indisponibilite'
+import { indisponibiliteSchema, modifierIndisponibiliteSchema, indisponibiliteEnMasseSchema } from '@/schemas/indisponibilite'
 import { logModification } from '@/lib/historique'
 import { detecterConflitPeriode, type ConflitPeriode } from '@/lib/affectations'
 import type { Periode, StatutPresence } from '@/generated/prisma/client'
@@ -539,5 +539,180 @@ export async function creerAffectationsEnMasse(data: {
   } catch (error) {
     console.error('Erreur création affectations en masse:', error)
     return { error: 'Erreur lors de la création des affectations' }
+  }
+}
+
+export async function verifierConflitsIndisponibilite(data: {
+  ouvrierIds: number[]
+  dates: string[]
+  periode: Periode
+}) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { conflits: [] }
+
+  const { ouvrierIds, dates, periode } = data
+
+  // Convert dates strings to Date objects
+  const dateObjects = dates.map((d) => new Date(d))
+
+  // Get ouvrier names for the response
+  const ouvriers = await prisma.ouvrier.findMany({
+    where: { id: { in: ouvrierIds } },
+    select: { id: true, nom: true, prenom: true }
+  })
+
+  const ouvrierMap = new Map(ouvriers.map((o) => [o.id, `${o.prenom} ${o.nom}`]))
+
+  // Find conflicting affectations
+  const affectations = await prisma.affectation.findMany({
+    where: {
+      ouvrierId: { in: ouvrierIds },
+      date: { in: dateObjects },
+      chantierId: { not: null },
+      ...(periode === 'JOURNEE'
+        ? {}
+        : {
+            OR: [{ periode }, { periode: 'JOURNEE' }]
+          })
+    },
+    include: {
+      chantier: {
+        select: { nom: true }
+      }
+    }
+  })
+
+  const conflits = affectations.map((affectation) => ({
+    ouvrierId: affectation.ouvrierId,
+    ouvrierNom: ouvrierMap.get(affectation.ouvrierId) ?? 'Inconnu',
+    date: affectation.date,
+    chantierActuel: affectation.chantier?.nom ?? 'Inconnu',
+    periodeActuelle: affectation.periode
+  }))
+
+  return { conflits }
+}
+
+export async function creerIndisponibilitesEnMasse(data: {
+  ouvrierIds: number[]
+  dates: string[]
+  periode: Periode
+  statutPresence: StatutPresence
+  ecraserConflits?: boolean
+}) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  const validation = indisponibiliteEnMasseSchema.safeParse(data)
+  if (!validation.success) {
+    const firstError = validation.error.issues[0]
+    return { error: firstError?.message ?? 'Données invalides' }
+  }
+
+  const { ouvrierIds, dates, periode, statutPresence, ecraserConflits = true } = validation.data
+
+  // Validate all ouvriers exist and are ACTIF
+  const ouvriers = await prisma.ouvrier.findMany({
+    where: { id: { in: ouvrierIds } }
+  })
+
+  if (ouvriers.length !== ouvrierIds.length) {
+    return { error: 'Un ou plusieurs ouvriers n\'existent pas' }
+  }
+
+  const ouvriersInactifs = ouvriers.filter((o) => o.statut !== 'ACTIF')
+  if (ouvriersInactifs.length > 0) {
+    return { error: 'Tous les ouvriers doivent être actifs' }
+  }
+
+  // Convert dates strings to Date objects
+  const dateObjects = dates.map((d) => new Date(d))
+
+  try {
+    // Use transaction to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      const conflits: { ouvrierId: number; ouvrierNom: string; date: Date; chantierNom: string }[] = []
+
+      // Find and track conflicting affectations
+      for (const ouvrierId of ouvrierIds) {
+        const ouvrier = ouvriers.find((o) => o.id === ouvrierId)!
+        for (const date of dateObjects) {
+          // Find affectations that would conflict
+          const conflictingAffectations = await tx.affectation.findMany({
+            where: {
+              ouvrierId,
+              date,
+              chantierId: { not: null },
+              ...(periode === 'JOURNEE'
+                ? {}
+                : {
+                    OR: [{ periode }, { periode: 'JOURNEE' }]
+                  })
+            },
+            include: { chantier: true }
+          })
+
+          for (const affectation of conflictingAffectations) {
+            conflits.push({
+              ouvrierId,
+              ouvrierNom: `${ouvrier.prenom} ${ouvrier.nom}`,
+              date,
+              chantierNom: affectation.chantier?.nom ?? 'Inconnu'
+            })
+          }
+
+          // Delete conflicting affectations if requested
+          if (ecraserConflits) {
+            if (periode === 'JOURNEE') {
+              // JOURNEE conflicts with all existing periods
+              await tx.affectation.deleteMany({
+                where: {
+                  ouvrierId,
+                  date
+                }
+              })
+            } else {
+              // MATIN or APRES_MIDI conflicts with same period or JOURNEE
+              await tx.affectation.deleteMany({
+                where: {
+                  ouvrierId,
+                  date,
+                  OR: [{ periode }, { periode: 'JOURNEE' }]
+                }
+              })
+            }
+          }
+        }
+      }
+
+      // Create new indisponibilités
+      const indisponibilitesData = ouvrierIds.flatMap((ouvrierId) =>
+        dateObjects.map((date) => ({
+          ouvrierId,
+          chantierId: null,
+          date,
+          periode: periode as Periode,
+          statutPresence: statutPresence as StatutPresence
+        }))
+      )
+
+      const created = await tx.affectation.createMany({
+        data: indisponibilitesData
+      })
+
+      // Log modifications for each created indisponibilité
+      for (const indispo of indisponibilitesData) {
+        await logModification('CREATE', 'Affectation', 0, null, indispo)
+      }
+
+      return { count: created.count, conflitsEcrases: conflits.length }
+    })
+
+    revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
+    return { success: true, count: result.count, conflitsEcrases: result.conflitsEcrases }
+  } catch (error) {
+    console.error('Erreur création indisponibilités en masse:', error)
+    return { error: 'Erreur lors de la création des indisponibilités' }
   }
 }

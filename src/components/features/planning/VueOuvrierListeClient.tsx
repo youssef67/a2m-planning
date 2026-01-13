@@ -9,6 +9,7 @@ import { PlanningOuvrierRow } from './PlanningOuvrierRow'
 import { DialogIndisponibilite } from './DialogIndisponibilite'
 import { AffectationOuvrierModal } from './AffectationOuvrierModal'
 import { AffectationOuvrierMultiModal } from './AffectationOuvrierMultiModal'
+import { IndisponibiliteMultiModal } from './IndisponibiliteMultiModal'
 import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
 import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 
@@ -102,6 +103,8 @@ export function VueOuvrierListeClient({
 
   // State for multi-affectation modal
   const [isMultiModalOpen, setIsMultiModalOpen] = useState(false)
+  // State for indisponibilité modal
+  const [isIndispoModalOpen, setIsIndispoModalOpen] = useState(false)
 
   // Optimistic state for all ouvriers
   const [optimisticOuvriers, dispatchOptimistic] = useOptimistic(
@@ -260,6 +263,14 @@ export function VueOuvrierListeClient({
     setIsMultiModalOpen(false)
   }, [])
 
+  const handleOpenIndispoModal = useCallback(() => {
+    setIsIndispoModalOpen(true)
+  }, [])
+
+  const handleCloseIndispoModal = useCallback(() => {
+    setIsIndispoModalOpen(false)
+  }, [])
+
   // Extract ouvriers for the modal (simplified version without affectations)
   const ouvriersActifs = initialOuvriers.map((o) => ({
     id: o.id,
@@ -281,10 +292,11 @@ export function VueOuvrierListeClient({
 
   return (
     <>
-      {/* Header with stats and action button */}
+      {/* Header with stats and action buttons */}
       <PlanningOuvrierHeader
         ouvriers={initialOuvriers}
         onOpenAffectationModal={handleOpenMultiModal}
+        onOpenIndisponibiliteModal={handleOpenIndispoModal}
       />
 
       <div className="space-y-4">
@@ -360,6 +372,14 @@ export function VueOuvrierListeClient({
         ouvriers={ouvriersActifs}
         semaineDebut={joursSemaine[0]}
         indisponibilites={indisponiblesByDate}
+        onRefresh={handleRefresh}
+      />
+
+      <IndisponibiliteMultiModal
+        isOpen={isIndispoModalOpen}
+        onClose={handleCloseIndispoModal}
+        ouvriers={ouvriersActifs}
+        semaineDebut={joursSemaine[0]}
         onRefresh={handleRefresh}
       />
     </>

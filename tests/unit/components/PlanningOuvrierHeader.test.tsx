@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { PlanningOuvrierHeader } from '@/components/features/planning/PlanningOuvrierHeader'
 import type { TypeOuvrier } from '@/generated/prisma/client'
 
@@ -52,5 +52,74 @@ describe('PlanningOuvrierHeader', () => {
 
     expect(screen.getByText('3 ouvriers actifs')).toBeInTheDocument()
     expect(screen.getByText('3 sous-traitants')).toBeInTheDocument()
+  })
+
+  describe('Bouton Indisponibilité (Story 2.16)', () => {
+    it('affiche le bouton Indisponibilité dans l\'en-tête (AC: 1)', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+
+      render(<PlanningOuvrierHeader ouvriers={ouvriers} />)
+
+      const boutonIndispo = screen.getByRole('button', { name: /indisponibilité/i })
+      expect(boutonIndispo).toBeInTheDocument()
+    })
+
+    it('le bouton Indisponibilité a un style distinct du bouton + (AC: 12)', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+
+      render(<PlanningOuvrierHeader ouvriers={ouvriers} />)
+
+      const boutonPlus = screen.getByRole('button', { name: /affectation/i })
+      const boutonIndispo = screen.getByRole('button', { name: /indisponibilité/i })
+
+      // Les deux boutons doivent être présents et distincts
+      expect(boutonPlus).toBeInTheDocument()
+      expect(boutonIndispo).toBeInTheDocument()
+      expect(boutonPlus).not.toBe(boutonIndispo)
+
+      // Vérifier que le bouton indispo a une couleur différente (orange vs blue)
+      expect(boutonIndispo.className).toContain('orange')
+    })
+
+    it('déclenche onOpenIndisponibiliteModal au clic sur le bouton Indisponibilité', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+      const mockOnOpenIndispo = vi.fn()
+
+      render(
+        <PlanningOuvrierHeader
+          ouvriers={ouvriers}
+          onOpenIndisponibiliteModal={mockOnOpenIndispo}
+        />
+      )
+
+      const boutonIndispo = screen.getByRole('button', { name: /indisponibilité/i })
+      fireEvent.click(boutonIndispo)
+
+      expect(mockOnOpenIndispo).toHaveBeenCalledTimes(1)
+    })
+
+    it('les deux boutons coexistent et fonctionnent indépendamment', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+      const mockOnOpenAffectation = vi.fn()
+      const mockOnOpenIndispo = vi.fn()
+
+      render(
+        <PlanningOuvrierHeader
+          ouvriers={ouvriers}
+          onOpenAffectationModal={mockOnOpenAffectation}
+          onOpenIndisponibiliteModal={mockOnOpenIndispo}
+        />
+      )
+
+      const boutonPlus = screen.getByRole('button', { name: /affectation/i })
+      const boutonIndispo = screen.getByRole('button', { name: /indisponibilité/i })
+
+      fireEvent.click(boutonPlus)
+      expect(mockOnOpenAffectation).toHaveBeenCalledTimes(1)
+      expect(mockOnOpenIndispo).not.toHaveBeenCalled()
+
+      fireEvent.click(boutonIndispo)
+      expect(mockOnOpenIndispo).toHaveBeenCalledTimes(1)
+    })
   })
 })

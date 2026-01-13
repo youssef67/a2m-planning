@@ -1,12 +1,13 @@
-import { Users, Wrench, Plus } from 'lucide-react'
+import { Users, Wrench, Plus, CalendarOff } from 'lucide-react'
 import type { TypeOuvrier } from '@/generated/prisma/client'
 
 interface PlanningOuvrierHeaderProps {
   ouvriers: Array<{ type: TypeOuvrier }>
   onOpenAffectationModal?: () => void
+  onOpenIndisponibiliteModal?: () => void
 }
 
-export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal }: PlanningOuvrierHeaderProps) {
+export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal, onOpenIndisponibiliteModal }: PlanningOuvrierHeaderProps) {
   const stats = {
     salaries: ouvriers.filter((o) => o.type === 'SALARIE').length,
     sousTraitants: ouvriers.filter((o) => o.type === 'SOUS_TRAITANT').length
@@ -23,7 +24,7 @@ export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal }: Plan
         <Wrench className="w-4 h-4" />
         <span className="font-medium">{stats.sousTraitants} sous-traitants</span>
       </div>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
           onClick={onOpenAffectationModal}
@@ -32,6 +33,15 @@ export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal }: Plan
           title="Affectation multi-ouvriers"
         >
           <Plus className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenIndisponibiliteModal}
+          className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
+          aria-label="Nouvelle indisponibilité"
+          title="Indisponibilité multi-ouvriers"
+        >
+          <CalendarOff className="h-5 w-5" />
         </button>
       </div>
     </div>

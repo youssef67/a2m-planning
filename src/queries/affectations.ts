@@ -207,3 +207,53 @@ const createGetOuvriersIndisponibles = (date: Date, periode: string) =>
 export async function getOuvriersIndisponibles(date: Date, periode: string) {
   return createGetOuvriersIndisponibles(date, periode)()
 }
+
+export interface ConflitIndisponibilite {
+  ouvrierId: number
+  ouvrierNom: string
+  date: Date
+  chantierActuel: string
+  periodeActuelle: string
+}
+
+export async function getConflitsIndisponibilite(
+  ouvrierIds: number[],
+  dates: Date[],
+  periode: string
+): Promise<ConflitIndisponibilite[]> {
+  const conflits: ConflitIndisponibilite[] = []
+
+  // Find all affectations that would conflict with the new indisponibilités
+  const affectations = await prisma.affectation.findMany({
+    where: {
+      ouvrierId: { in: ouvrierIds },
+      date: { in: dates },
+      chantierId: { not: null },
+      ...(periode === 'JOURNEE'
+        ? {}
+        : {
+            OR: [{ periode: periode as 'MATIN' | 'APRES_MIDI' }, { periode: 'JOURNEE' }]
+          })
+    },
+    include: {
+      ouvrier: {
+        select: { id: true, nom: true, prenom: true }
+      },
+      chantier: {
+        select: { nom: true }
+      }
+    }
+  })
+
+  for (const affectation of affectations) {
+    conflits.push({
+      ouvrierId: affectation.ouvrierId,
+      ouvrierNom: `${affectation.ouvrier.prenom} ${affectation.ouvrier.nom}`,
+      date: affectation.date,
+      chantierActuel: affectation.chantier?.nom ?? 'Inconnu',
+      periodeActuelle: affectation.periode
+    })
+  }
+
+  return conflits
+}
