@@ -95,14 +95,15 @@ describe('BoutonCopier', () => {
     })
   })
 
-  it('affiche "Copié" après le clic', async () => {
+  it('garde le texte "Copier" après le clic (feedback uniquement via toast)', async () => {
     render(<BoutonCopier data={mockData} annee={2026} />)
 
     const button = screen.getByRole('button', { name: /copier/i })
     fireEvent.click(button)
 
+    // Le bouton doit rester en état "Copier" car le feedback est uniquement via toast
     await waitFor(() => {
-      expect(screen.getByText('Copié')).toBeInTheDocument()
+      expect(screen.getByText('Copier')).toBeInTheDocument()
     })
   })
 

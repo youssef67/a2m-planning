@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
 import { creerOuvrier, modifierOuvrier } from '@/actions/ouvriers'
+import { useToast } from '@/components/ui/Toast'
 import type { Ouvrier } from '@/generated/prisma/client'
 
 type FormState = { error?: string; success?: boolean } | null
@@ -16,6 +17,7 @@ interface OuvrierFormProps {
 export function OuvrierForm({ ouvrier, onSuccess, onCancel }: OuvrierFormProps) {
   const isEdit = !!ouvrier
   const formRef = useRef<HTMLFormElement>(null)
+  const { showToast } = useToast()
 
   const action = isEdit ? modifierOuvrier : creerOuvrier
 
@@ -30,9 +32,10 @@ export function OuvrierForm({ ouvrier, onSuccess, onCancel }: OuvrierFormProps) 
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset()
+      showToast(isEdit ? 'Ouvrier modifié avec succès' : 'Ouvrier créé avec succès', 'success')
       onSuccess?.()
     }
-  }, [state?.success, onSuccess])
+  }, [state?.success, onSuccess, showToast, isEdit])
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">

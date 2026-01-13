@@ -15,6 +15,11 @@ vi.mock('@/actions/affectations', () => ({
   creerAffectation: vi.fn()
 }))
 
+// Mock du hook useToast
+vi.mock('@/components/ui/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() })
+}))
+
 const mockChantiers = [
   { id: 1, nom: 'Chantier Alpha', statut: 'ACTIF' as const },
   { id: 2, nom: 'Chantier Beta', statut: 'EN_PAUSE' as const }

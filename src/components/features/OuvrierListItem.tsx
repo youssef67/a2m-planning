@@ -1,10 +1,11 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Ouvrier } from '@/generated/prisma/client'
 import { archiverOuvrier, restaurerOuvrier } from '@/actions/ouvriers'
-
-type ActionState = { error?: string; success?: boolean } | null
+import { ModalConfirmation } from '@/components/ui/ModalConfirmation'
+import { useToast } from '@/components/ui/Toast'
 
 interface OuvrierListItemProps {
   ouvrier: Ouvrier
@@ -13,54 +14,84 @@ interface OuvrierListItemProps {
 }
 
 export function OuvrierListItem({ ouvrier, onEdit, isArchived = false }: OuvrierListItemProps) {
-  const action = isArchived ? restaurerOuvrier : archiverOuvrier
+  const router = useRouter()
+  const { showToast } = useToast()
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
-  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
-    async (_prevState, formData) => {
-      if (!isArchived) {
-        const confirmed = window.confirm(`Voulez-vous vraiment archiver ${ouvrier.prenom} ${ouvrier.nom} ?`)
-        if (!confirmed) return null
+  const handleArchiveClick = () => {
+    if (isArchived) {
+      // Restaurer directement sans confirmation
+      executeAction()
+    } else {
+      // Demander confirmation pour archiver
+      setShowConfirm(true)
+    }
+  }
+
+  const executeAction = () => {
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.append('id', ouvrier.id.toString())
+
+      const action = isArchived ? restaurerOuvrier : archiverOuvrier
+      const result = await action(formData)
+
+      if (result?.error) {
+        setError(result.error)
+        showToast(result.error, 'error')
+      } else {
+        showToast(isArchived ? 'Ouvrier restauré' : 'Ouvrier archivé', 'success')
+        router.refresh()
       }
-      return await action(formData)
-    },
-    null
-  )
+      setShowConfirm(false)
+    })
+  }
+
+  const handleConfirm = () => {
+    executeAction()
+  }
+
+  const handleCancel = () => {
+    setShowConfirm(false)
+  }
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
-      <div className="flex items-center gap-3">
-        <div>
-          <p className="font-medium text-gray-900">
-            {ouvrier.prenom} {ouvrier.nom}
-            {ouvrier.type === 'SOUS_TRAITANT' && (
-              <span className="ml-2" title="Sous-traitant">🔧</span>
-            )}
-          </p>
-          <p className="text-sm text-gray-500">
-            {ouvrier.type === 'SALARIE' ? 'Salarié' : 'Sous-traitant'}
-          </p>
+    <>
+      <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="font-medium text-gray-900">
+              {ouvrier.prenom} {ouvrier.nom}
+              {ouvrier.type === 'SOUS_TRAITANT' && (
+                <span className="ml-2" title="Sous-traitant">🔧</span>
+              )}
+            </p>
+            <p className="text-sm text-gray-500">
+              {ouvrier.type === 'SALARIE' ? 'Salarié' : 'Sous-traitant'}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        {state?.error && (
-          <span className="text-sm text-red-600">{state.error}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {error && (
+            <span className="text-sm text-red-600">{error}</span>
+          )}
 
-        {!isArchived && (
+          {!isArchived && (
+            <button
+              type="button"
+              onClick={() => onEdit(ouvrier)}
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Modifier
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => onEdit(ouvrier)}
-            className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Modifier
-          </button>
-        )}
-
-        <form action={formAction}>
-          <input type="hidden" name="id" value={ouvrier.id} />
-          <button
-            type="submit"
+            onClick={handleArchiveClick}
             disabled={isPending}
             className={`px-3 py-1.5 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
               isArchived
@@ -70,8 +101,20 @@ export function OuvrierListItem({ ouvrier, onEdit, isArchived = false }: Ouvrier
           >
             {isPending ? '...' : isArchived ? 'Restaurer' : 'Archiver'}
           </button>
-        </form>
+        </div>
       </div>
-    </div>
+
+      <ModalConfirmation
+        isOpen={showConfirm}
+        title="Archiver cet ouvrier ?"
+        message={`Voulez-vous vraiment archiver ${ouvrier.prenom} ${ouvrier.nom} ? L'ouvrier ne sera plus visible dans les listes mais pourra être restauré.`}
+        confirmLabel="Archiver"
+        cancelLabel="Annuler"
+        variant="warning"
+        isLoading={isPending}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+    </>
   )
 }

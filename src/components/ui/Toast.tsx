@@ -33,10 +33,11 @@ export function ToastProvider({ children }: ToastProviderProps) {
     const id = Date.now().toString()
     setToasts((prev) => [...prev, { id, message, type }])
 
-    // Auto-dismiss after 5 seconds
+    // Auto-dismiss: 3s for success, 5s for error/info
+    const delay = type === 'success' ? 3000 : 5000
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 5000)
+    }, delay)
   }, [])
 
   const dismissToast = useCallback((id: string) => {
@@ -59,6 +60,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
               ${toast.type === 'info' ? 'bg-gray-800 text-white' : ''}
             `}
             role="alert"
+            aria-live="polite"
           >
             <div className="flex items-center gap-3">
               <span>{toast.message}</span>

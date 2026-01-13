@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { FormulaireIndisponibilite } from './FormulaireIndisponibilite'
 import { supprimerIndisponibilite } from '@/actions/affectations'
+import { useToast } from '@/components/ui/Toast'
 import type { Ouvrier, Affectation } from '@/generated/prisma/client'
 
 interface DialogIndisponibiliteProps {
@@ -26,21 +27,17 @@ export function DialogIndisponibilite({
   onClose
 }: DialogIndisponibiliteProps) {
   const router = useRouter()
-  const [showSuccess, setShowSuccess] = useState(false)
+  const { showToast } = useToast()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   if (!isOpen) return null
 
   const handleSuccess = () => {
-    setShowSuccess(true)
-    // Force refresh to sync with server
+    const message = mode === 'create' ? 'Indisponibilité enregistrée' : 'Indisponibilité modifiée'
+    showToast(message, 'success')
     router.refresh()
-    setTimeout(() => {
-      setShowSuccess(false)
-      onClose()
-    }, 1500)
+    onClose()
   }
 
   const handleDelete = () => {
@@ -49,21 +46,17 @@ export function DialogIndisponibilite({
     startTransition(async () => {
       const result = await supprimerIndisponibilite(indisponibilite.id)
       if (result.error) {
-        setDeleteError(result.error)
+        showToast(result.error, 'error')
         setShowDeleteConfirm(false)
       } else {
+        showToast('Indisponibilité supprimée', 'success')
         router.refresh()
-        setShowSuccess(true)
-        setTimeout(() => {
-          setShowSuccess(false)
-          onClose()
-        }, 1500)
+        onClose()
       }
     })
   }
 
   const title = mode === 'create' ? 'Marquer indisponible' : "Modifier l'indisponibilité"
-  const successMessage = mode === 'create' ? 'Indisponibilité créée' : 'Indisponibilité modifiée'
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -73,28 +66,7 @@ export function DialogIndisponibilite({
           onClick={onClose}
         />
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-          {showSuccess ? (
-            <div className="text-center py-8">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg
-                  className="h-6 w-6 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="mt-4 text-lg font-medium text-gray-900">
-                {successMessage}
-              </p>
-            </div>
-          ) : showDeleteConfirm ? (
+          {showDeleteConfirm ? (
             <div className="text-center py-4">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
                 <svg
@@ -140,10 +112,6 @@ export function DialogIndisponibilite({
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 {title}
               </h2>
-
-              {deleteError && (
-                <p className="text-sm text-red-600 mb-4">{deleteError}</p>
-              )}
 
               <FormulaireIndisponibilite
                 ouvriers={ouvriers}

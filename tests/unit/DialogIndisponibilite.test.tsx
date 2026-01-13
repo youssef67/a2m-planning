@@ -17,6 +17,11 @@ vi.mock('@/actions/affectations', () => ({
   supprimerIndisponibilite: vi.fn()
 }))
 
+// Mock du hook useToast
+vi.mock('@/components/ui/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() })
+}))
+
 const mockOuvriers = [
   { id: 1, nom: 'Dupont', prenom: 'Jean' },
   { id: 2, nom: 'Martin', prenom: 'Pierre' }

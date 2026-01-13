@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { AffectationForm } from './AffectationForm'
 import { ModalConflitPeriode } from './planning/ModalConflitPeriode'
 import { modifierPeriodeAffectation } from '@/actions/affectations'
+import { useToast } from '@/components/ui/Toast'
 import type { Ouvrier, Periode } from '@/generated/prisma/client'
 import type { ConflitPeriode } from '@/lib/affectations'
 
@@ -28,7 +29,7 @@ export function AffectationModal({
   onClose
 }: AffectationModalProps) {
   const router = useRouter()
-  const [showSuccess, setShowSuccess] = useState(false)
+  const { showToast } = useToast()
   const [conflit, setConflit] = useState<ConflitPeriode | null>(null)
   const [nouvellePeriode, setNouvellePeriode] = useState<Periode | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -36,12 +37,9 @@ export function AffectationModal({
   if (!isOpen) return null
 
   const handleSuccess = () => {
-    setShowSuccess(true)
+    showToast('Affectation créée', 'success')
     router.refresh()
-    setTimeout(() => {
-      setShowSuccess(false)
-      onClose()
-    }, 1500)
+    onClose()
   }
 
   const handleConflict = (conflitDetecte: ConflitPeriode, periode: Periode) => {
@@ -59,6 +57,7 @@ export function AffectationModal({
       )
 
       if ('error' in result) {
+        showToast(result.error || 'Une erreur est survenue', 'error')
         setConflit(null)
         setNouvellePeriode(null)
       } else {
@@ -95,46 +94,21 @@ export function AffectationModal({
           onClick={onClose}
         />
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-          {showSuccess ? (
-            <div className="text-center py-8">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <svg
-                  className="h-6 w-6 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="mt-4 text-lg font-medium text-gray-900">
-                Affectation créée
-              </p>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Ajouter une affectation
-              </h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Chantier: <span className="font-medium">{chantierNom}</span>
-              </p>
-              <AffectationForm
-                chantierId={chantierId}
-                date={date}
-                ouvriers={ouvriers}
-                indisponibles={indisponibles}
-                onSuccess={handleSuccess}
-                onCancel={onClose}
-                onConflict={handleConflict}
-              />
-            </>
-          )}
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Ajouter une affectation
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Chantier: <span className="font-medium">{chantierNom}</span>
+          </p>
+          <AffectationForm
+            chantierId={chantierId}
+            date={date}
+            ouvriers={ouvriers}
+            indisponibles={indisponibles}
+            onSuccess={handleSuccess}
+            onCancel={onClose}
+            onConflict={handleConflict}
+          />
         </div>
       </div>
     </div>

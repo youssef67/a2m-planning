@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
 import { creerChantier, modifierChantier } from '@/actions/chantiers'
+import { useToast } from '@/components/ui/Toast'
 import type { Chantier } from '@/generated/prisma/client'
 
 type FormState = { error?: string; success?: boolean } | null
@@ -16,6 +17,7 @@ interface ChantierFormProps {
 export function ChantierForm({ chantier, onSuccess, onCancel }: ChantierFormProps) {
   const isEdit = !!chantier
   const formRef = useRef<HTMLFormElement>(null)
+  const { showToast } = useToast()
 
   const action = isEdit ? modifierChantier : creerChantier
 
@@ -30,9 +32,10 @@ export function ChantierForm({ chantier, onSuccess, onCancel }: ChantierFormProp
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset()
+      showToast(isEdit ? 'Chantier modifié avec succès' : 'Chantier créé avec succès', 'success')
       onSuccess?.()
     }
-  }, [state?.success, onSuccess])
+  }, [state?.success, onSuccess, showToast, isEdit])
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
