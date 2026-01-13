@@ -3,7 +3,7 @@
 import { revalidateTag, revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
-import { creerAffectationSchema } from '@/schemas/affectation'
+import { creerAffectationSchema, creerAffectationsEnMasseSchema } from '@/schemas/affectation'
 import { indisponibiliteSchema, modifierIndisponibiliteSchema } from '@/schemas/indisponibilite'
 import { logModification } from '@/lib/historique'
 import { detecterConflitPeriode, type ConflitPeriode } from '@/lib/affectations'
@@ -415,4 +415,113 @@ export async function verifierConflitAffectation(
 
   const conflit = await detecterConflitPeriode(ouvrierId, date, periode)
   return { conflit }
+}
+
+export async function creerAffectationsEnMasse(data: {
+  ouvrierIds: number[]
+  chantierId: number
+  dates: string[]
+  periode: Periode
+}) {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { error: authResult.error }
+
+  const validation = creerAffectationsEnMasseSchema.safeParse(data)
+  if (!validation.success) {
+    const firstError = validation.error.issues[0]
+    return { error: firstError?.message ?? 'Données invalides' }
+  }
+
+  const { ouvrierIds, chantierId, dates, periode } = validation.data
+
+  // Validate chantier exists and is not TERMINE
+  const chantier = await prisma.chantier.findUnique({
+    where: { id: chantierId }
+  })
+
+  if (!chantier) {
+    return { error: "Le chantier n'existe pas" }
+  }
+
+  if (chantier.statut === 'TERMINE') {
+    return { error: 'Impossible d\'affecter sur un chantier terminé' }
+  }
+
+  // Validate all ouvriers exist and are ACTIF
+  const ouvriers = await prisma.ouvrier.findMany({
+    where: { id: { in: ouvrierIds } }
+  })
+
+  if (ouvriers.length !== ouvrierIds.length) {
+    return { error: 'Un ou plusieurs ouvriers n\'existent pas' }
+  }
+
+  const ouvriersInactifs = ouvriers.filter((o) => o.statut !== 'ACTIF')
+  if (ouvriersInactifs.length > 0) {
+    return { error: 'Tous les ouvriers doivent être actifs' }
+  }
+
+  // Convert dates strings to Date objects
+  const dateObjects = dates.map((d) => new Date(d))
+
+  try {
+    // Use transaction to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete existing conflicting affectations
+      // (same ouvrier, same date, overlapping period)
+      for (const ouvrierId of ouvrierIds) {
+        for (const date of dateObjects) {
+          // Delete affectations that would conflict
+          if (periode === 'JOURNEE') {
+            // JOURNEE conflicts with all existing periods
+            await tx.affectation.deleteMany({
+              where: {
+                ouvrierId,
+                date,
+                chantierId: { not: null }
+              }
+            })
+          } else {
+            // MATIN or APRES_MIDI conflicts with same period or JOURNEE
+            await tx.affectation.deleteMany({
+              where: {
+                ouvrierId,
+                date,
+                chantierId: { not: null },
+                OR: [
+                  { periode },
+                  { periode: 'JOURNEE' }
+                ]
+              }
+            })
+          }
+        }
+      }
+
+      // Create new affectations
+      const affectationsData = ouvrierIds.flatMap((ouvrierId) =>
+        dateObjects.map((date) => ({
+          ouvrierId,
+          chantierId,
+          date,
+          periode: periode as Periode
+        }))
+      )
+
+      const created = await tx.affectation.createMany({
+        data: affectationsData
+      })
+
+      return created.count
+    })
+
+    revalidateTag('affectations', 'max')
+    revalidateTag('chantiers', 'max')
+    revalidatePath('/planning/ouvrier')
+    revalidatePath('/planning/chantier')
+    return { success: true, count: result }
+  } catch (error) {
+    console.error('Erreur création affectations en masse:', error)
+    return { error: 'Erreur lors de la création des affectations' }
+  }
 }

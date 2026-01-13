@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
 import { creerAffectation, verifierConflitAffectation } from '@/actions/affectations'
 import type { StatutChantier, Periode } from '@/generated/prisma/client'
-import type { OptimisticAffectationAdd } from './VueOuvrierClient'
+import type { OptimisticAffectationAdd } from './VueOuvrierListeClient'
 import type { ConflitPeriode } from '@/lib/affectations'
 
 type FormState = { error?: string; success?: boolean } | null

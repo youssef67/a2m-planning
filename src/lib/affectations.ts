@@ -121,3 +121,84 @@ function verifierChevauchement(
   // MATIN et APRES_MIDI ne se chevauchent pas entre eux
   return null
 }
+
+/**
+ * Information sur un conflit d'affectation multiple
+ */
+export interface ConflitAffectationMultiple {
+  ouvrierId: number
+  ouvrierNom: string
+  date: Date
+  chantierActuel: string
+  periodeActuelle: Periode
+}
+
+/**
+ * Détecte les conflits d'affectation pour plusieurs ouvriers sur plusieurs dates
+ *
+ * @param ouvrierIds - Liste des IDs d'ouvriers à vérifier
+ * @param dates - Liste des dates à vérifier
+ * @param periode - Période demandée
+ * @returns Liste des conflits détectés
+ */
+export async function detecterConflitsMultiples(
+  ouvrierIds: number[],
+  dates: Date[],
+  periode: Periode
+): Promise<ConflitAffectationMultiple[]> {
+  if (ouvrierIds.length === 0 || dates.length === 0) {
+    return []
+  }
+
+  // Chercher les affectations existantes pour ces ouvriers et dates
+  const affectationsExistantes = await prisma.affectation.findMany({
+    where: {
+      ouvrierId: { in: ouvrierIds },
+      date: { in: dates },
+      chantierId: { not: null }
+    },
+    include: {
+      ouvrier: {
+        select: {
+          id: true,
+          nom: true,
+          prenom: true
+        }
+      },
+      chantier: {
+        select: {
+          nom: true
+        }
+      }
+    }
+  })
+
+  const conflits: ConflitAffectationMultiple[] = []
+
+  for (const affectation of affectationsExistantes) {
+    if (!affectation.chantier || !affectation.ouvrier) continue
+
+    const periodeExistante = affectation.periode
+
+    // Vérifier si la période demandée chevauche la période existante
+    // Même période = conflit direct
+    // JOURNEE existante + MATIN/APRES_MIDI demandée = conflit
+    // MATIN/APRES_MIDI existante + JOURNEE demandée = conflit
+    const estConflit =
+      periodeExistante === periode ||
+      periodeExistante === 'JOURNEE' ||
+      periode === 'JOURNEE'
+
+    if (estConflit) {
+      conflits.push({
+        ouvrierId: affectation.ouvrierId,
+        ouvrierNom: `${affectation.ouvrier.prenom} ${affectation.ouvrier.nom}`,
+        date: affectation.date,
+        chantierActuel: affectation.chantier.nom,
+        periodeActuelle: affectation.periode
+      })
+    }
+  }
+
+  return conflits
+}

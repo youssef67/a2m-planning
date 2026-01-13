@@ -1,18 +1,17 @@
 import { Suspense } from 'react'
-import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid } from 'date-fns'
-import { getOuvriersPlanningAvecAffectations } from '@/queries/affectations'
+import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format } from 'date-fns'
+import { getOuvriersPlanningAvecAffectations, getOuvriersIndisponibles } from '@/queries/affectations'
 import { getChantiersNonTermines } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
-import { ListeOuvriers } from '@/components/features/planning/ListeOuvriers'
-import { VueOuvrierClient } from '@/components/features/planning/VueOuvrierClient'
+import { VueOuvrierListeClient } from '@/components/features/planning/VueOuvrierListeClient'
 
 export const metadata = {
   title: 'Planning par ouvrier - A2M Planning'
 }
 
 interface PageProps {
-  searchParams: Promise<{ semaine?: string; ouvrier?: string }>
+  searchParams: Promise<{ semaine?: string }>
 }
 
 function getWeekDates(semaineParam?: string) {
@@ -32,19 +31,7 @@ function getWeekDates(semaineParam?: string) {
   return { weekStart, weekEnd, days }
 }
 
-function parseOuvrierId(ouvrierParam?: string): number | null {
-  if (!ouvrierParam) return null
-  const id = parseInt(ouvrierParam, 10)
-  return isNaN(id) ? null : id
-}
-
-async function PlanningContent({
-  semaine,
-  ouvrierId
-}: {
-  semaine?: string
-  ouvrierId: number | null
-}) {
+async function PlanningContent({ semaine }: { semaine?: string }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
 
   // Fetch ouvriers and chantiers in parallel
@@ -53,50 +40,33 @@ async function PlanningContent({
     getChantiersNonTermines()
   ])
 
-  const selectedOuvrier = ouvrierId
-    ? ouvriers.find((o) => o.id === ouvrierId)
-    : null
+  // Fetch indisponibilités for each day of the week
+  const indisponibilitesPromises = days.map(async (day) => {
+    const indispo = await getOuvriersIndisponibles(day, 'JOURNEE')
+    return { date: format(day, 'yyyy-MM-dd'), indispo }
+  })
+
+  const indisponibilitesResults = await Promise.all(indisponibilitesPromises)
+
+  // Build map: dateString -> Record<ouvrierId, statutPresence>
+  const indisponiblesByDate: Record<string, Record<number, string>> = {}
+  for (const { date, indispo } of indisponibilitesResults) {
+    indisponiblesByDate[date] = indispo
+  }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-6">
-      <ListeOuvriers
-        ouvriers={ouvriers.map((o) => ({
-          id: o.id,
-          nom: o.nom,
-          prenom: o.prenom,
-          type: o.type
-        }))}
-        selectedOuvrierId={ouvrierId}
-      />
-
-      <div className="flex-1">
-        {selectedOuvrier ? (
-          <VueOuvrierClient
-            ouvrier={selectedOuvrier}
-            joursSemaine={days}
-            allOuvriers={ouvriers.map((o) => ({
-              id: o.id,
-              nom: o.nom,
-              prenom: o.prenom
-            }))}
-            chantiersNonTermines={chantiersNonTermines}
-          />
-        ) : (
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-500">
-              Sélectionnez un ouvrier pour voir son planning
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
+    <VueOuvrierListeClient
+      ouvriers={ouvriers}
+      joursSemaine={days}
+      chantiersNonTermines={chantiersNonTermines}
+      indisponiblesByDate={indisponiblesByDate}
+    />
   )
 }
 
 export default async function PlanningOuvrierPage({ searchParams }: PageProps) {
   const params = await searchParams
   const semaine = params.semaine
-  const ouvrierId = parseOuvrierId(params.ouvrier)
 
   return (
     <div>
@@ -114,7 +84,7 @@ export default async function PlanningOuvrierPage({ searchParams }: PageProps) {
           </div>
         }
       >
-        <PlanningContent semaine={semaine} ouvrierId={ouvrierId} />
+        <PlanningContent semaine={semaine} />
       </Suspense>
     </div>
   )

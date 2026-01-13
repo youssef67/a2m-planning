@@ -6,7 +6,7 @@ import { AffectationOuvrierForm } from './AffectationOuvrierForm'
 import { ModalConflitPeriode } from './ModalConflitPeriode'
 import { modifierPeriodeAffectation } from '@/actions/affectations'
 import type { StatutChantier, Periode } from '@/generated/prisma/client'
-import type { OptimisticAffectationAdd } from './VueOuvrierClient'
+import type { OptimisticAffectationAdd } from './VueOuvrierListeClient'
 import type { ConflitPeriode } from '@/lib/affectations'
 
 interface ChantierOption {

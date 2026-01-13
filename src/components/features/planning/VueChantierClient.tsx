@@ -1,11 +1,17 @@
 'use client'
 
-import { useState, useCallback, useOptimistic, useRef } from 'react'
+import { useState, useCallback, useOptimistic, useRef, useTransition } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { Plus } from 'lucide-react'
 import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
 import { AffectationModal } from '../AffectationModal'
+import { ModalAffectationMultiJours } from './ModalAffectationMultiJours'
+import { SelectionOuvriersChantier } from './SelectionOuvriersChantier'
 import { BadgeOuvrier } from './BadgeOuvrier'
+import { creerAffectationsEnMasse } from '@/actions/affectations'
+import { useToast } from '@/components/ui/Toast'
+import { useRouter } from 'next/navigation'
 import { clsx } from 'clsx'
 import type { StatutChantier, Periode, TypeOuvrier } from '@/generated/prisma/client'
 
@@ -63,6 +69,12 @@ interface MenuState {
   chantierId: number
 }
 
+interface ModalMultiJoursState {
+  isOpen: boolean
+  chantierId: number
+  chantierNom: string
+}
+
 const joursAbrevies = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 // Flatten all affectations for optimistic updates
@@ -96,6 +108,10 @@ export function VueChantierClient({
   ouvriersActifs,
   indisponiblesByDate
 }: VueChantierClientProps) {
+  const router = useRouter()
+  const { showToast } = useToast()
+  const [isPending, startTransition] = useTransition()
+
   const [menuState, setMenuState] = useState<MenuState>({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -109,6 +125,14 @@ export function VueChantierClient({
     chantierNom: '',
     date: ''
   })
+
+  const [modalMultiJours, setModalMultiJours] = useState<ModalMultiJoursState>({
+    isOpen: false,
+    chantierId: 0,
+    chantierNom: ''
+  })
+
+  const [selectedOuvrierIds, setSelectedOuvrierIds] = useState<number[]>([])
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
@@ -216,6 +240,52 @@ export function VueChantierClient({
     setModalAffectation((prev) => ({ ...prev, isOpen: false }))
   }, [])
 
+  const handleOpenModalMultiJours = useCallback(
+    (chantierId: number, chantierNom: string) => {
+      setSelectedOuvrierIds([])
+      setModalMultiJours({
+        isOpen: true,
+        chantierId,
+        chantierNom
+      })
+    },
+    []
+  )
+
+  const handleCloseModalMultiJours = useCallback(() => {
+    setModalMultiJours((prev) => ({ ...prev, isOpen: false }))
+    setSelectedOuvrierIds([])
+  }, [])
+
+  const handleConfirmMultiJours = useCallback(
+    async (jours: Date[], periode: Periode) => {
+      if (selectedOuvrierIds.length === 0) {
+        showToast('Veuillez sélectionner au moins un ouvrier', 'error')
+        return
+      }
+
+      const dates = jours.map((j) => format(j, 'yyyy-MM-dd'))
+
+      startTransition(async () => {
+        const result = await creerAffectationsEnMasse({
+          ouvrierIds: selectedOuvrierIds,
+          chantierId: modalMultiJours.chantierId,
+          dates,
+          periode
+        })
+
+        if ('error' in result && result.error) {
+          showToast(result.error, 'error')
+        } else if ('success' in result) {
+          showToast(`${result.count} affectation(s) créée(s)`, 'success')
+          handleCloseModalMultiJours()
+          router.refresh()
+        }
+      })
+    },
+    [selectedOuvrierIds, modalMultiJours.chantierId, showToast, router, handleCloseModalMultiJours]
+  )
+
   if (chantiers.length === 0) {
     return (
       <div className="text-center py-12">
@@ -257,6 +327,7 @@ export function VueChantierClient({
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onClickCellule={handleClickCellule}
+              onOpenMultiJours={handleOpenModalMultiJours}
             />
           ))}
         </div>
@@ -281,6 +352,24 @@ export function VueChantierClient({
         isOpen={modalAffectation.isOpen}
         onClose={handleCloseModalAffectation}
       />
+
+      <ModalAffectationMultiJours
+        isOpen={modalMultiJours.isOpen}
+        onClose={handleCloseModalMultiJours}
+        onConfirm={handleConfirmMultiJours}
+        titre={`Affecter au chantier ${modalMultiJours.chantierNom}`}
+        semaineDebut={joursSemaine[0]}
+        isLoading={isPending}
+        renderContent={(joursSelectionnes) => (
+          <SelectionOuvriersChantier
+            ouvriers={ouvriersActifs}
+            selectedIds={selectedOuvrierIds}
+            onSelectionChange={setSelectedOuvrierIds}
+            joursSelectionnes={joursSelectionnes}
+            indisponibilites={indisponiblesByDate}
+          />
+        )}
+      />
     </>
   )
 }
@@ -293,6 +382,7 @@ interface ChantierCardProps {
   onTouchStart: (affectation: Affectation, chantierId: number, event: React.TouchEvent) => void
   onTouchEnd: () => void
   onClickCellule: (chantierId: number, chantierNom: string, date: Date) => void
+  onOpenMultiJours: (chantierId: number, chantierNom: string) => void
 }
 
 function groupAffectationsByDay(
@@ -323,9 +413,11 @@ function ChantierCard({
   onAffectationClick,
   onTouchStart,
   onTouchEnd,
-  onClickCellule
+  onClickCellule,
+  onOpenMultiJours
 }: ChantierCardProps) {
   const isEnPause = chantier.statut === 'EN_PAUSE'
+  const isActif = chantier.statut === 'ACTIF'
   const affectationsByDay = groupAffectationsByDay(chantier.affectations, joursSemaine)
 
   return (
@@ -348,6 +440,20 @@ function ChantierCard({
               En pause
             </span>
           )}
+          {isActif && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenMultiJours(chantier.id, chantier.nom)
+              }}
+              className="ml-auto p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              aria-label={`Affecter des ouvriers au chantier ${chantier.nom}`}
+              title="Affectation multi-ouvriers"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -359,7 +465,7 @@ function ChantierCard({
           return (
             <div
               key={key}
-              className="group min-h-[80px] p-2 cursor-pointer hover:bg-gray-50 transition-colors relative"
+              className="min-h-[80px] p-2 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => onClickCellule(chantier.id, chantier.nom, jour)}
             >
               <div className="flex flex-col gap-1">
@@ -382,16 +488,6 @@ function ChantierCard({
                   </div>
                 ))}
               </div>
-              {/* Hover indicator "+" */}
-              <span className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity sm:flex hidden">
-                <span className="text-2xl text-gray-300 group-hover:text-gray-400">+</span>
-              </span>
-              {/* Mobile: always visible subtle "+" when empty */}
-              {affectations.length === 0 && (
-                <span className="sm:hidden absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="text-xl text-gray-300">+</span>
-                </span>
-              )}
             </div>
           )
         })}
