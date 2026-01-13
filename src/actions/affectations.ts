@@ -67,8 +67,8 @@ export async function creerAffectation(formData: FormData) {
       }
     })
 
-    revalidateTag('chantiers')
-    revalidateTag('affectations')
+    revalidateTag('chantiers', 'max')
+    revalidateTag('affectations', 'max')
     return { success: true, affectation }
   } catch (error) {
     // Handle unique constraint violation (duplicate affectation)
@@ -130,7 +130,7 @@ export async function creerIndisponibilite(formData: FormData) {
     })
 
     await logModification('CREATE', 'Affectation', affectation.id, null, affectation)
-    revalidateTag('affectations')
+    revalidateTag('affectations', 'max')
     return { success: true, affectation }
   } catch (error) {
     if (
@@ -185,7 +185,7 @@ export async function modifierIndisponibilite(id: number, formData: FormData) {
     })
 
     await logModification('UPDATE', 'Affectation', id, existing, updated)
-    revalidateTag('affectations')
+    revalidateTag('affectations', 'max')
     return { success: true, affectation: updated }
   } catch (error) {
     if (
@@ -222,7 +222,7 @@ export async function supprimerIndisponibilite(id: number) {
     })
 
     await logModification('DELETE', 'Affectation', id, existing, null)
-    revalidateTag('affectations')
+    revalidateTag('affectations', 'max')
     return { success: true }
   } catch {
     return { error: "Erreur lors de la suppression de l'indisponibilité" }
@@ -265,7 +265,7 @@ export async function reassignerAffectation(affectationId: number, nouveauChanti
   })
 
   await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
-  revalidateTag('affectations')
+  revalidateTag('affectations', 'max')
   return { success: true, affectation: updated }
 }
 
@@ -322,7 +322,7 @@ export async function modifierPeriodeAffectation(affectationId: number, nouvelle
     })
 
     await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
-    revalidateTag('affectations')
+    revalidateTag('affectations', 'max')
     return { success: true, affectation: updated }
   } catch (error) {
     if (
@@ -359,7 +359,7 @@ export async function supprimerAffectation(id: number) {
     })
 
     await logModification('DELETE', 'Affectation', id, existing, null)
-    revalidateTag('affectations')
+    revalidateTag('affectations', 'max')
     return { success: true }
   } catch {
     return { error: "Erreur lors de la suppression de l'affectation" }
@@ -398,6 +398,6 @@ export async function convertirEnIndisponibilite(affectationId: number, statutPr
   })
 
   await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
-  revalidateTag('affectations')
+  revalidateTag('affectations', 'max')
   return { success: true, affectation: updated }
 }
