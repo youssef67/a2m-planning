@@ -2,9 +2,10 @@
 
 import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
-import { creerAffectation } from '@/actions/affectations'
-import type { StatutChantier, Periode, StatutPresence } from '@/generated/prisma/client'
+import { creerAffectation, verifierConflitAffectation } from '@/actions/affectations'
+import type { StatutChantier, Periode } from '@/generated/prisma/client'
 import type { OptimisticAffectationAdd } from './VueOuvrierClient'
+import type { ConflitPeriode } from '@/lib/affectations'
 
 type FormState = { error?: string; success?: boolean } | null
 
@@ -21,6 +22,7 @@ interface AffectationOuvrierFormProps {
   onSuccess?: () => void
   onCancel?: () => void
   onOptimisticAdd?: (affectation: OptimisticAffectationAdd) => void
+  onConflict?: (conflit: ConflitPeriode, nouvellePeriode: Periode) => void
 }
 
 export function AffectationOuvrierForm({
@@ -29,17 +31,28 @@ export function AffectationOuvrierForm({
   chantiers,
   onSuccess,
   onCancel,
-  onOptimisticAdd
+  onOptimisticAdd,
+  onConflict
 }: AffectationOuvrierFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
 
   const [state, formAction, isPending] = useActionState<FormState, FormData>(
     async (_prevState, formData) => {
+      const dateValue = formData.get('date') as string
+      const periode = (formData.get('periode') as Periode) || 'JOURNEE'
+
+      // Vérifier les conflits de période avant création
+      if (onConflict && dateValue && periode) {
+        const { conflit } = await verifierConflitAffectation(ouvrierId, dateValue, periode)
+        if (conflit) {
+          onConflict(conflit, periode)
+          return null // Ne pas créer, le conflit sera géré par le parent
+        }
+      }
+
       // Trigger optimistic update before server action
       if (onOptimisticAdd) {
         const chantierId = Number(formData.get('chantierId'))
-        const dateValue = formData.get('date') as string
-        const periode = (formData.get('periode') as Periode) || 'JOURNEE'
         const chantier = chantiers.find((c) => c.id === chantierId)
 
         if (chantier) {

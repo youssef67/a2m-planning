@@ -2,8 +2,9 @@
 
 import { useActionState } from 'react'
 import { useEffect, useRef } from 'react'
-import { creerAffectation } from '@/actions/affectations'
-import type { Ouvrier } from '@/generated/prisma/client'
+import { creerAffectation, verifierConflitAffectation } from '@/actions/affectations'
+import type { Ouvrier, Periode } from '@/generated/prisma/client'
+import type { ConflitPeriode } from '@/lib/affectations'
 
 type FormState = { error?: string; success?: boolean } | null
 
@@ -21,6 +22,7 @@ interface AffectationFormProps {
   indisponibles?: Record<number, string>
   onSuccess?: () => void
   onCancel?: () => void
+  onConflict?: (conflit: ConflitPeriode, nouvellePeriode: Periode) => void
 }
 
 export function AffectationForm({
@@ -29,12 +31,26 @@ export function AffectationForm({
   ouvriers,
   indisponibles = {},
   onSuccess,
-  onCancel
+  onCancel,
+  onConflict
 }: AffectationFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
 
   const [state, formAction, isPending] = useActionState<FormState, FormData>(
     async (_prevState, formData) => {
+      // Vérifier les conflits de période avant création
+      const ouvrierId = Number(formData.get('ouvrierId'))
+      const dateValue = formData.get('date') as string
+      const periode = formData.get('periode') as Periode
+
+      if (onConflict && ouvrierId && dateValue && periode) {
+        const { conflit } = await verifierConflitAffectation(ouvrierId, dateValue, periode)
+        if (conflit) {
+          onConflict(conflit, periode)
+          return null // Ne pas créer, le conflit sera géré par le parent
+        }
+      }
+
       const result = await creerAffectation(formData)
       return result
     },

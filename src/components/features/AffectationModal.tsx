@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { AffectationForm } from './AffectationForm'
-import type { Ouvrier } from '@/generated/prisma/client'
+import { ModalConflitPeriode } from './planning/ModalConflitPeriode'
+import { modifierPeriodeAffectation } from '@/actions/affectations'
+import type { Ouvrier, Periode } from '@/generated/prisma/client'
+import type { ConflitPeriode } from '@/lib/affectations'
 
 interface AffectationModalProps {
   chantierId: number
@@ -26,17 +29,62 @@ export function AffectationModal({
 }: AffectationModalProps) {
   const router = useRouter()
   const [showSuccess, setShowSuccess] = useState(false)
+  const [conflit, setConflit] = useState<ConflitPeriode | null>(null)
+  const [nouvellePeriode, setNouvellePeriode] = useState<Periode | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   if (!isOpen) return null
 
   const handleSuccess = () => {
     setShowSuccess(true)
-    // Force refresh to sync with server
     router.refresh()
     setTimeout(() => {
       setShowSuccess(false)
       onClose()
     }, 1500)
+  }
+
+  const handleConflict = (conflitDetecte: ConflitPeriode, periode: Periode) => {
+    setConflit(conflitDetecte)
+    setNouvellePeriode(periode)
+  }
+
+  const handleConfirmModification = () => {
+    if (!conflit || !nouvellePeriode) return
+
+    startTransition(async () => {
+      const result = await modifierPeriodeAffectation(
+        conflit.affectationExistante.id,
+        nouvellePeriode
+      )
+
+      if ('error' in result) {
+        setConflit(null)
+        setNouvellePeriode(null)
+      } else {
+        setConflit(null)
+        setNouvellePeriode(null)
+        handleSuccess()
+      }
+    })
+  }
+
+  const handleCancelConflict = () => {
+    setConflit(null)
+    setNouvellePeriode(null)
+  }
+
+  // Afficher le modal de conflit si un conflit est détecté
+  if (conflit && nouvellePeriode) {
+    return (
+      <ModalConflitPeriode
+        conflit={conflit}
+        nouvellePeriode={nouvellePeriode}
+        onConfirm={handleConfirmModification}
+        onCancel={handleCancelConflict}
+        isLoading={isPending}
+      />
+    )
   }
 
   return (
@@ -83,6 +131,7 @@ export function AffectationModal({
                 indisponibles={indisponibles}
                 onSuccess={handleSuccess}
                 onCancel={onClose}
+                onConflict={handleConflict}
               />
             </>
           )}

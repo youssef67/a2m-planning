@@ -6,6 +6,7 @@ import { requireAuth } from '@/lib/auth'
 import { creerAffectationSchema } from '@/schemas/affectation'
 import { indisponibiliteSchema, modifierIndisponibiliteSchema } from '@/schemas/indisponibilite'
 import { logModification } from '@/lib/historique'
+import { detecterConflitPeriode, type ConflitPeriode } from '@/lib/affectations'
 import type { Periode, StatutPresence } from '@/generated/prisma/client'
 
 export async function creerAffectation(formData: FormData) {
@@ -400,4 +401,16 @@ export async function convertirEnIndisponibilite(affectationId: number, statutPr
   await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
   revalidateTag('affectations', 'max')
   return { success: true, affectation: updated }
+}
+
+export async function verifierConflitAffectation(
+  ouvrierId: number,
+  date: string,
+  periode: Periode
+): Promise<{ conflit: ConflitPeriode | null }> {
+  const authResult = await requireAuth()
+  if ('error' in authResult) return { conflit: null }
+
+  const conflit = await detecterConflitPeriode(ouvrierId, date, periode)
+  return { conflit }
 }
