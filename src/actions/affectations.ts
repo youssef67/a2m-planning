@@ -9,6 +9,17 @@ import { logModification } from '@/lib/historique'
 import { detecterConflitPeriode, type ConflitPeriode } from '@/lib/affectations'
 import type { Periode, StatutPresence } from '@/generated/prisma/client'
 
+/**
+ * Invalide le Router Cache pour toutes les vues planning.
+ * Nécessaire car revalidateTag n'invalide que le Data Cache (unstable_cache),
+ * pas le Router Cache côté client.
+ */
+function revalidatePlanningViews() {
+  revalidatePath('/planning/comptage')
+  revalidatePath('/planning/chantier')
+  revalidatePath('/planning/ouvrier')
+}
+
 export async function creerAffectation(formData: FormData) {
   const authResult = await requireAuth()
   if ('error' in authResult) return { error: authResult.error }
@@ -70,6 +81,7 @@ export async function creerAffectation(formData: FormData) {
 
     revalidateTag('chantiers', 'max')
     revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
     return { success: true, affectation }
   } catch (error) {
     // Handle unique constraint violation (duplicate affectation)
@@ -132,6 +144,7 @@ export async function creerIndisponibilite(formData: FormData) {
 
     await logModification('CREATE', 'Affectation', affectation.id, null, affectation)
     revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
     return { success: true, affectation }
   } catch (error) {
     if (
@@ -187,6 +200,7 @@ export async function modifierIndisponibilite(id: number, formData: FormData) {
 
     await logModification('UPDATE', 'Affectation', id, existing, updated)
     revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
     return { success: true, affectation: updated }
   } catch (error) {
     if (
@@ -224,6 +238,7 @@ export async function supprimerIndisponibilite(id: number) {
 
     await logModification('DELETE', 'Affectation', id, existing, null)
     revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
     return { success: true }
   } catch {
     return { error: "Erreur lors de la suppression de l'indisponibilité" }
@@ -267,6 +282,7 @@ export async function reassignerAffectation(affectationId: number, nouveauChanti
 
   await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
   revalidateTag('affectations', 'max')
+  revalidatePlanningViews()
   return { success: true, affectation: updated }
 }
 
@@ -324,6 +340,7 @@ export async function modifierPeriodeAffectation(affectationId: number, nouvelle
 
     await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
     revalidateTag('affectations', 'max')
+    revalidatePlanningViews()
     return { success: true, affectation: updated }
   } catch (error) {
     if (
@@ -361,8 +378,7 @@ export async function supprimerAffectation(id: number) {
 
     await logModification('DELETE', 'Affectation', id, existing, null)
     revalidateTag('affectations', 'max')
-    revalidatePath('/planning/ouvrier')
-    revalidatePath('/planning/chantier')
+    revalidatePlanningViews()
     return { success: true }
   } catch {
     return { error: "Erreur lors de la suppression de l'affectation" }
@@ -402,6 +418,7 @@ export async function convertirEnIndisponibilite(affectationId: number, statutPr
 
   await logModification('UPDATE', 'Affectation', affectationId, existing, updated)
   revalidateTag('affectations', 'max')
+  revalidatePlanningViews()
   return { success: true, affectation: updated }
 }
 
@@ -517,8 +534,7 @@ export async function creerAffectationsEnMasse(data: {
 
     revalidateTag('affectations', 'max')
     revalidateTag('chantiers', 'max')
-    revalidatePath('/planning/ouvrier')
-    revalidatePath('/planning/chantier')
+    revalidatePlanningViews()
     return { success: true, count: result }
   } catch (error) {
     console.error('Erreur création affectations en masse:', error)
