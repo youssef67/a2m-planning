@@ -107,15 +107,15 @@ export function MenuContextuelAffectation({
   const handleReassign = useCallback(
     (chantier: Chantier) => {
       setError(null)
-      onOptimisticUpdate?.({
-        type: 'reassign',
-        id: affectation.id,
-        chantierId: chantier.id,
-        chantierNom: chantier.nom
-      })
       onClose()
 
       startTransition(async () => {
+        onOptimisticUpdate?.({
+          type: 'reassign',
+          id: affectation.id,
+          chantierId: chantier.id,
+          chantierNom: chantier.nom
+        })
         const result = await reassignerAffectation(affectation.id, chantier.id)
         if ('error' in result && result.error) {
           showToast(result.error, 'error')
@@ -131,10 +131,10 @@ export function MenuContextuelAffectation({
   const handleModifierPeriode = useCallback(
     (periode: Periode) => {
       setError(null)
-      onOptimisticUpdate?.({ type: 'periode', id: affectation.id, periode })
       onClose()
 
       startTransition(async () => {
+        onOptimisticUpdate?.({ type: 'periode', id: affectation.id, periode })
         const result = await modifierPeriodeAffectation(affectation.id, periode)
         if ('error' in result && result.error) {
           showToast(result.error, 'error')
@@ -149,10 +149,10 @@ export function MenuContextuelAffectation({
 
   const handleSupprimer = useCallback(() => {
     setError(null)
-    onOptimisticUpdate?.({ type: 'delete', id: affectation.id })
     onClose()
 
     startTransition(async () => {
+      onOptimisticUpdate?.({ type: 'delete', id: affectation.id })
       const result = await supprimerAffectation(affectation.id)
       if ('error' in result && result.error) {
         showToast(result.error, 'error')
@@ -166,10 +166,10 @@ export function MenuContextuelAffectation({
   const handleConvertir = useCallback(
     (statutPresence: StatutPresence) => {
       setError(null)
-      onOptimisticUpdate?.({ type: 'indisponibilite', id: affectation.id, statutPresence })
       onClose()
 
       startTransition(async () => {
+        onOptimisticUpdate?.({ type: 'indisponibilite', id: affectation.id, statutPresence })
         const result = await convertirEnIndisponibilite(affectation.id, statutPresence)
         if ('error' in result && result.error) {
           showToast(result.error, 'error')

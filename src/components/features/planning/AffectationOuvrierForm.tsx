@@ -47,7 +47,7 @@ export function AffectationOuvrierForm({
             id: -Date.now(), // Temporary negative ID for optimistic entry
             date: new Date(dateValue),
             periode,
-            statutPresence: 'PRESENT' as StatutPresence,
+            statutPresence: 'TRAVAIL',
             chantier: {
               id: chantier.id,
               nom: chantier.nom,
