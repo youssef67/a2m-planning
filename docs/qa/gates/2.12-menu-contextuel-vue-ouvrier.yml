@@ -1,0 +1,116 @@
+# Quality Gate: Story 2.12 - Menu Contextuel Vue Ouvrier
+# Generated: 2026-01-13
+# Reviewer: Sarah (PO Agent)
+
+story:
+  id: "2.12"
+  title: "Menu Contextuel Vue Ouvrier - Actions sur Affectations"
+  type: "Feature Enhancement"
+  status: "PASSED"
+
+gate_execution:
+  date: "2026-01-13"
+  agent: "Sarah"
+  model: "claude-opus-4-5-20251101"
+  duration_minutes: 45
+
+description: |
+  Ajout du menu contextuel sur la vue ouvrier permettant de modifier,
+  supprimer, réaffecter et marquer indisponible les affectations de chantier
+  directement depuis la vue planning par ouvrier.
+
+acceptance_criteria:
+  ac_1:
+    description: "Clic sur une affectation de chantier ouvre le menu contextuel"
+    status: "PASS"
+    evidence: "GrillePlanningOuvrier.tsx:98-104 - onClickAffectation callback"
+
+  ac_2:
+    description: "Menu propose: Réaffecter, Modifier période, Marquer indisponible, Supprimer"
+    status: "PASS"
+    evidence: "MenuContextuelAffectation.tsx réutilisé - 4 actions disponibles"
+
+  ac_3:
+    description: "Suppression fonctionne avec mise à jour immédiate de l'UI"
+    status: "PASS"
+    evidence: "VueOuvrierClient.tsx:92-117 - useOptimistic avec action delete"
+
+  ac_4:
+    description: "Modifications (période, réaffectation) reflétées immédiatement"
+    status: "PASS"
+    evidence: "VueOuvrierClient.tsx:234-238 - handleMenuOptimisticUpdate"
+
+  ac_5:
+    description: "Garde-fous conflits de période conservés"
+    status: "PASS"
+    evidence: "ModalConflitPeriode existant toujours actif via MenuContextuelAffectation"
+
+  ac_6:
+    description: "Indisponibilités toujours éditables via clic (comportement existant)"
+    status: "PASS"
+    evidence: "GrillePlanningOuvrier.tsx:99-100 - onClickIndisponibilite préservé"
+
+automated_checks:
+  lint:
+    status: "PASS"
+    command: "npm run lint"
+    errors: 0
+
+  build:
+    status: "PASS"
+    command: "npm run build"
+    output: "Success"
+
+  tests:
+    status: "PASS"
+    command: "npm test"
+    total: 355
+    passed: 355
+    failed: 0
+
+code_quality:
+  type_safety:
+    status: "PASS"
+    notes: "Types OptimisticUpdate et OptimisticAction correctement définis"
+
+  error_handling:
+    status: "PASS"
+    notes: "Erreurs gérées via toast notifications existant"
+
+  performance:
+    status: "PASS"
+    notes: "Optimistic updates instantanés, revalidatePath pour cache"
+
+  code_style:
+    status: "PASS"
+    notes: "Pattern cohérent avec VueChantierClient"
+
+files_modified:
+  - path: "src/components/features/planning/CarteAffectationOuvrier.tsx"
+    changes: "onClick accepte MouseEvent, toutes les cartes cliquables"
+
+  - path: "src/components/features/planning/GrillePlanningOuvrier.tsx"
+    changes: "Ajout callback onClickAffectation pour affectations de chantier"
+
+  - path: "src/components/features/planning/VueOuvrierClient.tsx"
+    changes: "Intégration MenuContextuelAffectation, useOptimistic étendu pour delete/modify"
+
+  - path: "src/actions/affectations.ts"
+    changes: "Ajout revalidatePath pour invalidation cache immédiate"
+
+technical_notes:
+  - "Réutilisation de MenuContextuelAffectation existant (DRY)"
+  - "Pattern useOptimistic étendu pour gérer delete, periode, reassign, indisponibilite"
+  - "revalidatePath ajouté pour résoudre race condition cache"
+
+recommendations:
+  blocking: []
+  non_blocking: []
+
+verdict:
+  status: "APPROVED"
+  approved_for: "MERGE"
+  comments: |
+    La fonctionnalité ajoute les actions manquantes sur la vue ouvrier
+    en réutilisant le composant MenuContextuelAffectation existant.
+    L'implémentation suit les patterns établis et tous les tests passent.

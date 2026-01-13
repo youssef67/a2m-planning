@@ -27,10 +27,11 @@ interface GrillePlanningOuvrierProps {
   ouvrier: OuvrierWithAffectations
   joursSemaine: Date[]
   onClickIndisponibilite?: (affectation: AffectationData) => void
+  onClickAffectation?: (affectation: AffectationData, event: React.MouseEvent) => void
   onClickCelluleVide?: (ouvrierId: number, ouvrierNom: string, date: Date) => void
 }
 
-export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponibilite, onClickCelluleVide }: GrillePlanningOuvrierProps) {
+export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponibilite, onClickAffectation, onClickCelluleVide }: GrillePlanningOuvrierProps) {
   const getAffectationsForDay = (day: Date) => {
     return ouvrier.affectations.filter((a) => isSameDay(new Date(a.date), day))
   }
@@ -94,9 +95,13 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
                     >
                       <CarteAffectationOuvrier
                         affectation={affectation}
-                        onClick={affectation.chantier === null && onClickIndisponibilite
-                          ? () => onClickIndisponibilite(affectation)
-                          : undefined}
+                        onClick={
+                          affectation.chantier === null && onClickIndisponibilite
+                            ? () => onClickIndisponibilite(affectation)
+                            : affectation.chantier !== null && onClickAffectation
+                              ? (e) => e && onClickAffectation(affectation, e)
+                              : undefined
+                        }
                       />
                     </div>
                   ))
@@ -152,9 +157,13 @@ export function GrillePlanningOuvrier({ ouvrier, joursSemaine, onClickIndisponib
                     >
                       <CarteAffectationOuvrier
                         affectation={affectation}
-                        onClick={affectation.chantier === null && onClickIndisponibilite
-                          ? () => onClickIndisponibilite(affectation)
-                          : undefined}
+                        onClick={
+                          affectation.chantier === null && onClickIndisponibilite
+                            ? () => onClickIndisponibilite(affectation)
+                            : affectation.chantier !== null && onClickAffectation
+                              ? (e) => e && onClickAffectation(affectation, e)
+                              : undefined
+                        }
                       />
                     </div>
                   ))}

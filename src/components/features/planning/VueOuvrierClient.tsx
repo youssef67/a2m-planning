@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { GrillePlanningOuvrier } from './GrillePlanningOuvrier'
 import { DialogIndisponibilite } from './DialogIndisponibilite'
 import { AffectationOuvrierModal } from './AffectationOuvrierModal'
+import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
 import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 
 type AffectationData = Pick<Affectation, 'id' | 'date' | 'periode' | 'statutPresence'> & {
@@ -21,6 +22,10 @@ export type OptimisticAffectationAdd = {
   chantier: Pick<Chantier, 'id' | 'nom' | 'statut'>
   isOptimistic: true
 }
+
+type OptimisticAction =
+  | { type: 'add'; affectation: OptimisticAffectationAdd }
+  | OptimisticUpdate
 
 type OuvrierWithAffectations = Pick<Ouvrier, 'id' | 'nom' | 'prenom' | 'type'> & {
   affectations: AffectationData[]
@@ -60,6 +65,21 @@ interface DialogState {
   }
 }
 
+interface MenuContextuelState {
+  isOpen: boolean
+  position: { x: number; y: number }
+  affectation: {
+    id: number
+    chantierId: number | null
+    periode: Periode
+    ouvrier: {
+      id: number
+      nom: string
+      prenom: string
+    }
+  } | null
+}
+
 export function VueOuvrierClient({
   ouvrier,
   joursSemaine,
@@ -69,9 +89,32 @@ export function VueOuvrierClient({
   const router = useRouter()
 
   // Optimistic state for affectations
-  const [optimisticAffectations, addOptimisticAffectation] = useOptimistic(
+  const [optimisticAffectations, dispatchOptimistic] = useOptimistic(
     ouvrier.affectations,
-    (state, newAffectation: OptimisticAffectationAdd) => [...state, newAffectation]
+    (state, action: OptimisticAction) => {
+      switch (action.type) {
+        case 'add':
+          return [...state, action.affectation]
+        case 'delete':
+          return state.filter((a) => a.id !== action.id)
+        case 'periode':
+          return state.map((a) =>
+            a.id === action.id ? { ...a, periode: action.periode } : a
+          )
+        case 'reassign':
+          return state.map((a) =>
+            a.id === action.id && a.chantier
+              ? { ...a, chantier: { ...a.chantier, id: action.chantierId, nom: action.chantierNom } }
+              : a
+          )
+        case 'indisponibilite':
+          return state.map((a) =>
+            a.id === action.id
+              ? { ...a, chantier: null, statutPresence: action.statutPresence }
+              : a
+          )
+      }
+    }
   )
 
   // Create ouvrier with optimistic affectations
@@ -90,6 +133,12 @@ export function VueOuvrierClient({
     ouvrierId: 0,
     ouvrierNom: '',
     date: ''
+  })
+
+  const [menuContextuel, setMenuContextuel] = useState<MenuContextuelState>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    affectation: null
   })
 
   const openCreateDialog = () => {
@@ -144,14 +193,50 @@ export function VueOuvrierClient({
 
   const handleOptimisticAdd = useCallback(
     (affectation: OptimisticAffectationAdd) => {
-      addOptimisticAffectation(affectation)
+      dispatchOptimistic({ type: 'add', affectation })
     },
-    [addOptimisticAffectation]
+    [dispatchOptimistic]
   )
 
   const handleRefresh = useCallback(() => {
     router.refresh()
   }, [router])
+
+  const handleClickAffectation = useCallback(
+    (affectation: AffectationData, event: React.MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (affectation.chantier) {
+        setMenuContextuel({
+          isOpen: true,
+          position: { x: event.clientX, y: event.clientY },
+          affectation: {
+            id: affectation.id,
+            chantierId: affectation.chantier.id,
+            periode: affectation.periode,
+            ouvrier: {
+              id: ouvrier.id,
+              nom: ouvrier.nom,
+              prenom: ouvrier.prenom
+            }
+          }
+        })
+      }
+    },
+    [ouvrier.id, ouvrier.nom, ouvrier.prenom]
+  )
+
+  const closeMenuContextuel = useCallback(() => {
+    setMenuContextuel((prev) => ({ ...prev, isOpen: false, affectation: null }))
+  }, [])
+
+  const handleMenuOptimisticUpdate = useCallback(
+    (update: OptimisticUpdate) => {
+      dispatchOptimistic(update)
+    },
+    [dispatchOptimistic]
+  )
 
   return (
     <div>
@@ -172,6 +257,7 @@ export function VueOuvrierClient({
         ouvrier={ouvrierWithOptimistic}
         joursSemaine={joursSemaine}
         onClickIndisponibilite={openEditDialog}
+        onClickAffectation={handleClickAffectation}
         onClickCelluleVide={handleClickCelluleVide}
       />
 
@@ -194,6 +280,16 @@ export function VueOuvrierClient({
         onOptimisticAdd={handleOptimisticAdd}
         onRefresh={handleRefresh}
       />
+
+      {menuContextuel.isOpen && menuContextuel.affectation && (
+        <MenuContextuelAffectation
+          affectation={menuContextuel.affectation}
+          chantiers={chantiersNonTermines}
+          position={menuContextuel.position}
+          onClose={closeMenuContextuel}
+          onOptimisticUpdate={handleMenuOptimisticUpdate}
+        />
+      )}
     </div>
   )
 }

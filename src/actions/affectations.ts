@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { creerAffectationSchema } from '@/schemas/affectation'
@@ -361,6 +361,8 @@ export async function supprimerAffectation(id: number) {
 
     await logModification('DELETE', 'Affectation', id, existing, null)
     revalidateTag('affectations', 'max')
+    revalidatePath('/planning/ouvrier')
+    revalidatePath('/planning/chantier')
     return { success: true }
   } catch {
     return { error: "Erreur lors de la suppression de l'affectation" }

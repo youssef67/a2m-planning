@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { clsx } from 'clsx'
 import type { Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 import { BadgePeriode } from './BadgePeriode'
@@ -16,18 +17,17 @@ interface AffectationData {
 
 interface CarteAffectationOuvrierProps {
   affectation: AffectationData
-  onClick?: () => void
+  onClick?: (e?: MouseEvent<HTMLDivElement>) => void
 }
 
 export function CarteAffectationOuvrier({ affectation, onClick }: CarteAffectationOuvrierProps) {
   const isUnavailable = affectation.statutPresence !== 'TRAVAIL'
-  const isIndisponibilite = affectation.chantier === null
   const chantierName = affectation.chantier?.nom ?? 'Indisponible'
-  const isClickable = isIndisponibilite && onClick
+  const isClickable = !!onClick
 
   return (
     <div
-      onClick={isClickable ? onClick : undefined}
+      onClick={isClickable ? (e) => onClick(e) : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
       onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
