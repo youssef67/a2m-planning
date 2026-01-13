@@ -4,7 +4,10 @@ import { useMemo } from 'react'
 import type { Ouvrier, Periode, StatutPresence } from '@/generated/prisma/client'
 import { SelecteurAnnee } from './SelecteurAnnee'
 import { CelluleComptage } from './CelluleComptage'
+import { BoutonCopier } from './BoutonCopier'
+import { BoutonImprimer } from './BoutonImprimer'
 import { calculerStatistiquesAnnee, type AffectationComptage } from '@/lib/comptage'
+import type { OuvrierPourExport } from '@/lib/export-utils'
 
 type OuvrierAvecAffectations = Ouvrier & {
   affectations: Array<{
@@ -43,9 +46,17 @@ export function VueComptageClient({ ouvriers, annee }: VueComptageClientProps) {
     return result
   }, [ouvriers, annee])
 
+  // Préparer les données pour l'export
+  const dataExport: OuvrierPourExport[] = useMemo(() => {
+    return ouvriers.map((ouvrier) => ({
+      ouvrier,
+      stats: statsParOuvrier[ouvrier.id]
+    }))
+  }, [ouvriers, statsParOuvrier])
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 no-print">
         <div className="text-sm text-gray-600">
           <span className="font-medium">{ouvriersSalaries.length}</span> ouvriers actifs
           {ouvriersSTT.length > 0 && (
@@ -55,11 +66,15 @@ export function VueComptageClient({ ouvriers, annee }: VueComptageClientProps) {
             </>
           )}
         </div>
-        <SelecteurAnnee annee={annee} />
+        <div className="flex items-center gap-2">
+          <BoutonCopier data={dataExport} annee={annee} />
+          <BoutonImprimer />
+          <SelecteurAnnee annee={annee} />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="tableau-comptage min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th

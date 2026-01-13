@@ -24,3 +24,42 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Print Styles */
+@media print {
+  /* Masquer éléments non imprimables */
+  nav,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  /* Optimiser le tableau de comptage */
+  .tableau-comptage {
+    width: 100%;
+    font-size: 10px;
+  }
+
+  .tableau-comptage th,
+  .tableau-comptage td {
+    border: 1px solid #000;
+    padding: 4px;
+  }
+
+  /* Réinitialiser les couleurs pour l'impression */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* S'assurer que les sticky columns s'impriment correctement */
+  .sticky {
+    position: static !important;
+  }
+
+  /* Orientation paysage */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+}

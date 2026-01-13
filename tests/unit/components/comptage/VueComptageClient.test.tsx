@@ -11,6 +11,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams()
 }))
 
+// Mock useToast hook for BoutonCopier
+vi.mock('@/components/ui/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() })
+}))
+
 const createOuvrier = (id: number, nom: string, prenom: string, type: 'SALARIE' | 'SOUS_TRAITANT', affectations: Array<{
   date: Date
   periode: 'JOURNEE' | 'MATIN' | 'APRES_MIDI'
