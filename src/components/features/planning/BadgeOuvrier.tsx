@@ -26,7 +26,7 @@ export function BadgeOuvrier({ ouvrier, periode, onClick, className }: BadgeOuvr
   return (
     <div
       className={clsx(
-        'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm h-full',
+        'flex items-center justify-between px-2 py-1 rounded-md text-sm h-full',
         'bg-gray-50 border border-gray-200',
         onClick && 'cursor-pointer hover:bg-gray-100 transition-colors',
         className
@@ -36,8 +36,10 @@ export function BadgeOuvrier({ ouvrier, periode, onClick, className }: BadgeOuvr
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
-      {isSousTraitant && <span aria-label="Sous-traitant">🔧</span>}
-      <span className="text-gray-800">{nomComplet}</span>
+      <span className="flex items-center gap-1.5">
+        {isSousTraitant && <span aria-label="Sous-traitant">🔧</span>}
+        <span className="text-gray-800">{nomComplet}</span>
+      </span>
       <BadgePeriode periode={periode} />
     </div>
   )
