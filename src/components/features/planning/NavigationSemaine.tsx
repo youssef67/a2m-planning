@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, Printer } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useSemaine } from '@/hooks/useSemaine'
@@ -75,6 +75,15 @@ export function NavigationSemaine() {
             aria-label="Sélectionner une date"
           />
         </div>
+
+        <button
+          onClick={() => window.print()}
+          className="no-print px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors inline-flex items-center gap-2"
+          aria-label="Imprimer le planning"
+        >
+          <Printer className="w-4 h-4" />
+          <span className="hidden sm:inline">Imprimer</span>
+        </button>
       </div>
     </div>
   )

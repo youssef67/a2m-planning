@@ -5,6 +5,7 @@ import { getChantiersNonTermines } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { VueOuvrierListeClient } from '@/components/features/planning/VueOuvrierListeClient'
+import { PrintableWeeklyPlanning } from '@/components/features/planning/PrintableWeeklyPlanning'
 
 export const metadata = {
   title: 'Planning par ouvrier - A2M Planning'
@@ -55,12 +56,19 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
   }
 
   return (
-    <VueOuvrierListeClient
-      ouvriers={ouvriers}
-      joursSemaine={days}
-      chantiersNonTermines={chantiersNonTermines}
-      indisponiblesByDate={indisponiblesByDate}
-    />
+    <>
+      <VueOuvrierListeClient
+        ouvriers={ouvriers}
+        joursSemaine={days}
+        chantiersNonTermines={chantiersNonTermines}
+        indisponiblesByDate={indisponiblesByDate}
+      />
+      <PrintableWeeklyPlanning
+        ouvriers={ouvriers}
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+      />
+    </>
   )
 }
 

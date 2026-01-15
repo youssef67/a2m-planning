@@ -25,8 +25,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Print-only elements (hidden on screen) */
+.print-only {
+  display: none !important;
+}
+
 /* Print Styles */
 @media print {
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
   /* Masquer éléments non imprimables */
   nav,
   .no-print,
@@ -61,5 +71,72 @@ body {
   @page {
     size: A4 landscape;
     margin: 1cm;
+  }
+
+  /* Planning hebdomadaire ouvriers - Styles impression */
+  .planning-print-container {
+    padding: 0;
+  }
+
+  .planning-print-title {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .planning-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+  }
+
+  .planning-print-table th,
+  .planning-print-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    text-align: center;
+    vertical-align: top;
+  }
+
+  .planning-print-table th {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: bold;
+  }
+
+  .planning-print-table .ouvrier-col {
+    text-align: left;
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .planning-print-table .ouvrier-nom {
+    font-weight: bold;
+  }
+
+  .planning-print-table .ouvrier-type {
+    font-size: 8px;
+    font-style: italic;
+    color: #666;
+  }
+
+  .planning-print-table .cell-chantier {
+    font-weight: normal;
+  }
+
+  .planning-print-table .cell-periode {
+    font-size: 8px;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  .planning-print-legend {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #000;
+    padding-top: 5px;
   }
 }
