@@ -66,13 +66,15 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
 
   return (
     <>
-      <VueChantierClient
-        chantiers={chantiers}
-        chantiersActifs={chantiersActifs}
-        joursSemaine={days}
-        ouvriersActifs={ouvriersActifs}
-        indisponiblesByDate={indisponiblesByDate}
-      />
+      <div className="no-print">
+        <VueChantierClient
+          chantiers={chantiers}
+          chantiersActifs={chantiersActifs}
+          joursSemaine={days}
+          ouvriersActifs={ouvriersActifs}
+          indisponiblesByDate={indisponiblesByDate}
+        />
+      </div>
       {/* Print-only: Individual chantier planning pages (3 weeks) */}
       <div className="print-only">
         {chantiersActifsPrint.map((chantier) => (
@@ -93,16 +95,18 @@ export default async function PlanningChantierPage({ searchParams }: PageProps) 
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Planning par chantier
-      </h1>
+      <div className="no-print">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          Planning par chantier
+        </h1>
 
-      <NavigationOnglets />
-      <NavigationSemaine />
+        <NavigationOnglets />
+        <NavigationSemaine />
+      </div>
 
       <Suspense
         fallback={
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-12 no-print">
             <div className="text-gray-500">Chargement du planning...</div>
           </div>
         }

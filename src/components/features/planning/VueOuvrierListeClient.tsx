@@ -11,7 +11,6 @@ import { AffectationOuvrierModal } from './AffectationOuvrierModal'
 import { AffectationOuvrierMultiModal } from './AffectationOuvrierMultiModal'
 import { IndisponibiliteMultiModal } from './IndisponibiliteMultiModal'
 import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
-import { PrintableOuvrierPlanning } from './PrintableOuvrierPlanning'
 import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 
 type AffectationData = Pick<Affectation, 'id' | 'date' | 'periode' | 'statutPresence'> & {
@@ -52,8 +51,6 @@ interface VueOuvrierListeClientProps {
   joursSemaine: Date[]
   chantiersNonTermines: ChantierOption[]
   indisponiblesByDate?: IndisponibilitesMap
-  weekStart: Date
-  ouvriersThreeWeeks?: OuvrierWithAffectations[]
 }
 
 type DialogMode = 'create' | 'edit'
@@ -100,9 +97,7 @@ export function VueOuvrierListeClient({
   ouvriers: initialOuvriers,
   joursSemaine,
   chantiersNonTermines,
-  indisponiblesByDate = {},
-  weekStart,
-  ouvriersThreeWeeks
+  indisponiblesByDate = {}
 }: VueOuvrierListeClientProps) {
   const router = useRouter()
 
@@ -413,17 +408,6 @@ export function VueOuvrierListeClient({
         semaineDebut={joursSemaine[0]}
         onRefresh={handleRefresh}
       />
-
-      {/* Print-only: Individual ouvrier planning pages (3 weeks) */}
-      <div className="print-only">
-        {(ouvriersThreeWeeks ?? initialOuvriers).map((ouvrier) => (
-          <PrintableOuvrierPlanning
-            key={ouvrier.id}
-            ouvrier={ouvrier}
-            weekStart={weekStart}
-          />
-        ))}
-      </div>
     </>
   )
 }

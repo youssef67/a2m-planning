@@ -6,6 +6,7 @@ import { NavigationOnglets } from '@/components/features/planning/NavigationOngl
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { VueOuvrierListeClient } from '@/components/features/planning/VueOuvrierListeClient'
 import { PrintableWeeklyPlanning } from '@/components/features/planning/PrintableWeeklyPlanning'
+import { PrintableOuvrierPlanning } from '@/components/features/planning/PrintableOuvrierPlanning'
 
 export const metadata = {
   title: 'Planning par ouvrier - A2M Planning'
@@ -61,19 +62,30 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
 
   return (
     <>
-      <VueOuvrierListeClient
-        ouvriers={ouvriers}
-        joursSemaine={days}
-        chantiersNonTermines={chantiersNonTermines}
-        indisponiblesByDate={indisponiblesByDate}
-        weekStart={weekStart}
-        ouvriersThreeWeeks={ouvriersThreeWeeks}
-      />
+      <div className="no-print">
+        <VueOuvrierListeClient
+          ouvriers={ouvriers}
+          joursSemaine={days}
+          chantiersNonTermines={chantiersNonTermines}
+          indisponiblesByDate={indisponiblesByDate}
+        />
+      </div>
+      {/* Print-only: Weekly planning (1 week, all ouvriers on one page) */}
       <PrintableWeeklyPlanning
         ouvriers={ouvriers}
         weekStart={weekStart}
         weekEnd={weekEnd}
       />
+      {/* Print-only: Individual ouvrier planning pages (3 weeks) */}
+      <div className="print-only">
+        {ouvriersThreeWeeks.map((ouvrier) => (
+          <PrintableOuvrierPlanning
+            key={ouvrier.id}
+            ouvrier={ouvrier}
+            weekStart={weekStart}
+          />
+        ))}
+      </div>
     </>
   )
 }
@@ -84,16 +96,18 @@ export default async function PlanningOuvrierPage({ searchParams }: PageProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Planning par ouvrier
-      </h1>
+      <div className="no-print">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          Planning par ouvrier
+        </h1>
 
-      <NavigationOnglets />
-      <NavigationSemaine />
+        <NavigationOnglets />
+        <NavigationSemaine />
+      </div>
 
       <Suspense
         fallback={
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-12 no-print">
             <div className="text-gray-500">Chargement du planning...</div>
           </div>
         }
