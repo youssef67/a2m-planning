@@ -5,7 +5,6 @@ import { getChantiersNonTermines } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { VueOuvrierListeClient } from '@/components/features/planning/VueOuvrierListeClient'
-import { PrintableWeeklyPlanning } from '@/components/features/planning/PrintableWeeklyPlanning'
 import { PrintableOuvrierPlanning } from '@/components/features/planning/PrintableOuvrierPlanning'
 
 export const metadata = {
@@ -70,12 +69,6 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
           indisponiblesByDate={indisponiblesByDate}
         />
       </div>
-      {/* Print-only: Weekly planning (1 week, all ouvriers on one page) */}
-      <PrintableWeeklyPlanning
-        ouvriers={ouvriers}
-        weekStart={weekStart}
-        weekEnd={weekEnd}
-      />
       {/* Print-only: Individual ouvrier planning pages (3 weeks) */}
       <div className="print-only">
         {ouvriersThreeWeeks.map((ouvrier) => (
