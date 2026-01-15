@@ -100,20 +100,22 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
             <div
               key={jour.toISOString()}
               className={clsx(
-                'min-h-[60px] p-2 relative',
+                'min-h-[60px] p-2 relative flex flex-col',
                 canAdd && onClickCelluleVide && 'cursor-pointer hover:bg-gray-50 transition-colors'
               )}
               onClick={() => handleCellClick(jour, affectations)}
             >
               {affectations.length > 0 ? (
-                <div className="space-y-1">
+                <div className="flex flex-col gap-1 flex-1">
                   {affectations.map((affectation) => (
                     <div
                       key={affectation.id}
+                      className="flex-1 flex"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <CarteAffectationOuvrier
                         affectation={affectation}
+                        className="w-full"
                         onClick={
                           affectation.chantier === null && onClickIndisponibilite
                             ? () => onClickIndisponibilite(ouvrier, affectation)
@@ -126,7 +128,7 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-gray-400 text-center py-2">
+                <div className="text-xs text-gray-400 text-center py-2 flex-1 flex items-center justify-center">
                   —
                 </div>
               )}
@@ -156,7 +158,7 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
                 {format(jour, 'EEE d', { locale: fr })}
               </div>
               {affectations.length > 0 ? (
-                <div className="space-y-1">
+                <div className="flex flex-col gap-1">
                   {affectations.map((affectation) => (
                     <div
                       key={affectation.id}
@@ -164,6 +166,7 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
                     >
                       <CarteAffectationOuvrier
                         affectation={affectation}
+                        className="w-full"
                         onClick={
                           affectation.chantier === null && onClickIndisponibilite
                             ? () => onClickIndisponibilite(ouvrier, affectation)

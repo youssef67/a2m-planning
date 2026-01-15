@@ -18,9 +18,10 @@ interface AffectationData {
 interface CarteAffectationOuvrierProps {
   affectation: AffectationData
   onClick?: (e?: MouseEvent<HTMLDivElement>) => void
+  className?: string
 }
 
-export function CarteAffectationOuvrier({ affectation, onClick }: CarteAffectationOuvrierProps) {
+export function CarteAffectationOuvrier({ affectation, onClick, className }: CarteAffectationOuvrierProps) {
   const isUnavailable = affectation.statutPresence !== 'TRAVAIL'
   const chantierName = affectation.chantier?.nom ?? 'Indisponible'
   const isClickable = !!onClick
@@ -32,11 +33,12 @@ export function CarteAffectationOuvrier({ affectation, onClick }: CarteAffectati
       tabIndex={isClickable ? 0 : undefined}
       onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={clsx(
-        'p-2 rounded-lg border text-sm',
+        'p-2 rounded-lg border text-sm h-full',
         isUnavailable
           ? 'bg-gray-50 border-gray-200'
           : 'bg-white border-gray-200 shadow-sm',
-        isClickable && 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors'
+        isClickable && 'cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors',
+        className
       )}
     >
       <div className="flex items-start justify-between gap-2">
