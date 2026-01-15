@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
-import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format } from 'date-fns'
+import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format, addWeeks } from 'date-fns'
 import { getChantiersPlanningAvecAffectations, getOuvriersIndisponibles } from '@/queries/affectations'
 import { getChantiersActifs } from '@/queries/chantiers'
 import { getOuvriersActifs } from '@/queries/ouvriers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
 import { NavigationSemaine } from '@/components/features/planning/NavigationSemaine'
 import { VueChantierClient } from '@/components/features/planning/VueChantierClient'
+import { PrintableChantierPlanning } from '@/components/features/planning/PrintableChantierPlanning'
 
 export const metadata = {
   title: 'Planning par chantier - A2M Planning'
@@ -35,9 +36,13 @@ function getWeekDates(semaineParam?: string) {
 async function PlanningContent({ semaine }: { semaine?: string }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
 
+  // Calculate 3-week range for print
+  const threeWeekEnd = endOfWeek(addWeeks(weekStart, 2), { weekStartsOn: 1 })
+
   // Fetch all data in parallel
-  const [chantiers, chantiersActifs, ouvriersActifs] = await Promise.all([
+  const [chantiers, chantiersThreeWeeks, chantiersActifs, ouvriersActifs] = await Promise.all([
     getChantiersPlanningAvecAffectations(weekStart, weekEnd),
+    getChantiersPlanningAvecAffectations(weekStart, threeWeekEnd),
     getChantiersActifs(),
     getOuvriersActifs()
   ])
@@ -56,14 +61,29 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
     indisponiblesByDate[date] = indispo
   }
 
+  // Filter only ACTIF chantiers for print (AC13: tous les chantiers actifs)
+  const chantiersActifsPrint = chantiersThreeWeeks.filter((c) => c.statut === 'ACTIF')
+
   return (
-    <VueChantierClient
-      chantiers={chantiers}
-      chantiersActifs={chantiersActifs}
-      joursSemaine={days}
-      ouvriersActifs={ouvriersActifs}
-      indisponiblesByDate={indisponiblesByDate}
-    />
+    <>
+      <VueChantierClient
+        chantiers={chantiers}
+        chantiersActifs={chantiersActifs}
+        joursSemaine={days}
+        ouvriersActifs={ouvriersActifs}
+        indisponiblesByDate={indisponiblesByDate}
+      />
+      {/* Print-only: Individual chantier planning pages (3 weeks) */}
+      <div className="print-only">
+        {chantiersActifsPrint.map((chantier) => (
+          <PrintableChantierPlanning
+            key={chantier.id}
+            chantier={chantier}
+            weekStart={weekStart}
+          />
+        ))}
+      </div>
+    </>
   )
 }
 

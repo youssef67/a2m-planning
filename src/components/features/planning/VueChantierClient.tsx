@@ -3,12 +3,13 @@
 import { useState, useCallback, useOptimistic, useRef, useTransition } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Plus } from 'lucide-react'
+import { Plus, Printer } from 'lucide-react'
 import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
 import { AffectationModal } from '../AffectationModal'
 import { ModalAffectationMultiJours } from './ModalAffectationMultiJours'
 import { SelectionOuvriersChantier } from './SelectionOuvriersChantier'
 import { BadgeOuvrier } from './BadgeOuvrier'
+import { PlanningChantierHeader } from './PlanningChantierHeader'
 import { creerAffectationsEnMasse } from '@/actions/affectations'
 import { useToast } from '@/components/ui/Toast'
 import { useRouter } from 'next/navigation'
@@ -286,6 +287,30 @@ export function VueChantierClient({
     [selectedOuvrierIds, modalMultiJours.chantierId, showToast, router, handleCloseModalMultiJours]
   )
 
+  // Print handlers
+  const handlePrintAll = useCallback(() => {
+    // Show all printable elements
+    document.querySelectorAll('.printable-chantier').forEach((el) => {
+      el.classList.remove('print-hidden')
+    })
+    window.print()
+  }, [])
+
+  const handlePrintSingle = useCallback((chantierId: number) => {
+    // Hide all chantiers except the one to print
+    document.querySelectorAll('.printable-chantier').forEach((el) => {
+      el.classList.add('print-hidden')
+    })
+    document.querySelector(`#printable-chantier-${chantierId}`)?.classList.remove('print-hidden')
+
+    window.print()
+
+    // Restore all after print
+    document.querySelectorAll('.printable-chantier').forEach((el) => {
+      el.classList.remove('print-hidden')
+    })
+  }, [])
+
   if (chantiers.length === 0) {
     return (
       <div className="text-center py-12">
@@ -299,6 +324,12 @@ export function VueChantierClient({
 
   return (
     <>
+      {/* Header with stats and print button */}
+      <PlanningChantierHeader
+        chantiers={initialChantiers}
+        onPrintAll={handlePrintAll}
+      />
+
       <div className="space-y-4">
         {/* Header row with days */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -328,6 +359,7 @@ export function VueChantierClient({
               onTouchEnd={handleTouchEnd}
               onClickCellule={handleClickCellule}
               onOpenMultiJours={handleOpenModalMultiJours}
+              onPrintSingle={handlePrintSingle}
             />
           ))}
         </div>
@@ -383,6 +415,7 @@ interface ChantierCardProps {
   onTouchEnd: () => void
   onClickCellule: (chantierId: number, chantierNom: string, date: Date) => void
   onOpenMultiJours: (chantierId: number, chantierNom: string) => void
+  onPrintSingle?: (chantierId: number) => void
 }
 
 function groupAffectationsByDay(
@@ -414,7 +447,8 @@ function ChantierCard({
   onTouchStart,
   onTouchEnd,
   onClickCellule,
-  onOpenMultiJours
+  onOpenMultiJours,
+  onPrintSingle
 }: ChantierCardProps) {
   const isEnPause = chantier.statut === 'EN_PAUSE'
   const isActif = chantier.statut === 'ACTIF'
@@ -440,20 +474,36 @@ function ChantierCard({
               En pause
             </span>
           )}
-          {isActif && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onOpenMultiJours(chantier.id, chantier.nom)
-              }}
-              className="ml-auto p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              aria-label={`Affecter des ouvriers au chantier ${chantier.nom}`}
-              title="Affectation multi-ouvriers"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            {isActif && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenMultiJours(chantier.id, chantier.nom)
+                }}
+                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                aria-label={`Affecter des ouvriers au chantier ${chantier.nom}`}
+                title="Affectation multi-ouvriers"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+            )}
+            {onPrintSingle && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPrintSingle(chantier.id)
+                }}
+                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors no-print"
+                aria-label={`Imprimer le planning du chantier ${chantier.nom}`}
+                title="Imprimer ce planning"
+              >
+                <Printer className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

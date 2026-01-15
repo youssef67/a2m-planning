@@ -267,4 +267,93 @@ describe('VueChantierClient', () => {
       expect(screen.getByText('Ven')).toBeInTheDocument()
     })
   })
+
+  describe('Print functionality (Story 2.18)', () => {
+    it('should render header with print all button (AC: 1)', () => {
+      render(
+        <VueChantierClient
+          chantiers={mockChantiers}
+          chantiersActifs={mockChantiersActifs}
+          joursSemaine={mockJoursSemaine}
+          ouvriersActifs={mockOuvriersActifs}
+          indisponiblesByDate={mockIndisponiblesByDate}
+        />
+      )
+
+      const printAllButton = screen.getByLabelText('Tout imprimer')
+      expect(printAllButton).toBeInTheDocument()
+    })
+
+    it('should render print icon on each active chantier card (AC: 2)', () => {
+      render(
+        <VueChantierClient
+          chantiers={mockChantiers}
+          chantiersActifs={mockChantiersActifs}
+          joursSemaine={mockJoursSemaine}
+          ouvriersActifs={mockOuvriersActifs}
+          indisponiblesByDate={mockIndisponiblesByDate}
+        />
+      )
+
+      // Chantier Alpha is ACTIF, should have print button
+      const printButton = screen.getByLabelText('Imprimer le planning du chantier Chantier Alpha')
+      expect(printButton).toBeInTheDocument()
+    })
+
+    it('should show chantier stats in header', () => {
+      render(
+        <VueChantierClient
+          chantiers={mockChantiers}
+          chantiersActifs={mockChantiersActifs}
+          joursSemaine={mockJoursSemaine}
+          ouvriersActifs={mockOuvriersActifs}
+          indisponiblesByDate={mockIndisponiblesByDate}
+        />
+      )
+
+      // Should show stats about active chantiers
+      expect(screen.getByText(/1 chantiers actifs/i)).toBeInTheDocument()
+      expect(screen.getByText(/1 en pause/i)).toBeInTheDocument()
+    })
+
+    it('should call window.print when clicking print all button', () => {
+      const windowPrintSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
+
+      render(
+        <VueChantierClient
+          chantiers={mockChantiers}
+          chantiersActifs={mockChantiersActifs}
+          joursSemaine={mockJoursSemaine}
+          ouvriersActifs={mockOuvriersActifs}
+          indisponiblesByDate={mockIndisponiblesByDate}
+        />
+      )
+
+      const printAllButton = screen.getByLabelText('Tout imprimer')
+      fireEvent.click(printAllButton)
+
+      expect(windowPrintSpy).toHaveBeenCalled()
+      windowPrintSpy.mockRestore()
+    })
+
+    it('should call window.print when clicking individual print button (AC: 4)', () => {
+      const windowPrintSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
+
+      render(
+        <VueChantierClient
+          chantiers={mockChantiers}
+          chantiersActifs={mockChantiersActifs}
+          joursSemaine={mockJoursSemaine}
+          ouvriersActifs={mockOuvriersActifs}
+          indisponiblesByDate={mockIndisponiblesByDate}
+        />
+      )
+
+      const printButton = screen.getByLabelText('Imprimer le planning du chantier Chantier Alpha')
+      fireEvent.click(printButton)
+
+      expect(windowPrintSpy).toHaveBeenCalled()
+      windowPrintSpy.mockRestore()
+    })
+  })
 })
