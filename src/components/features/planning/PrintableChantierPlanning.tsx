@@ -43,12 +43,31 @@ export function PrintableChantierPlanning({
     return `Planning du ${debut} au ${fin}`
   }
 
-  const getOuvrierCount = (day: Date): number => {
+  interface PeriodeCount {
+    journee: number
+    matin: number
+    apresMidi: number
+  }
+
+  const getOuvrierCountByPeriode = (day: Date): PeriodeCount => {
     const dayStr = format(day, 'yyyy-MM-dd')
     const affectationsJour = chantier.affectations.filter(
       (a) => format(new Date(a.date), 'yyyy-MM-dd') === dayStr
     )
-    return affectationsJour.length
+
+    return {
+      journee: affectationsJour.filter((a) => a.periode === 'JOURNEE').length,
+      matin: affectationsJour.filter((a) => a.periode === 'MATIN').length,
+      apresMidi: affectationsJour.filter((a) => a.periode === 'APRES_MIDI').length
+    }
+  }
+
+  const formatPeriodeCount = (count: PeriodeCount): string[] => {
+    const parts: string[] = []
+    if (count.journee > 0) parts.push(`${count.journee}J`)
+    if (count.matin > 0) parts.push(`${count.matin}M`)
+    if (count.apresMidi > 0) parts.push(`${count.apresMidi}AM`)
+    return parts
   }
 
   const formatWeekLabel = (week: WeekData) => {
@@ -94,13 +113,21 @@ export function PrintableChantierPlanning({
                 <div className="week-dates">{formatWeekLabel(week)}</div>
               </td>
               {week.days.map((day, dayIndex) => {
-                const count = getOuvrierCount(day)
+                const count = getOuvrierCountByPeriode(day)
+                const parts = formatPeriodeCount(count)
+                const isEmpty = parts.length === 0
                 return (
                   <td key={dayIndex}>
                     <div className="cell-content">
-                      <div className={count === 0 ? 'cell-aucun' : 'cell-ouvrier'}>
-                        {count}
-                      </div>
+                      {isEmpty ? (
+                        <div className="cell-aucun">-</div>
+                      ) : (
+                        parts.map((part, idx) => (
+                          <div key={idx} className="cell-ouvrier">
+                            {part}
+                          </div>
+                        ))
+                      )}
                     </div>
                   </td>
                 )
@@ -112,7 +139,7 @@ export function PrintableChantierPlanning({
 
       {/* Legend */}
       <div className="printable-chantier-legend">
-        Nombre d'ouvriers présents par jour
+        J = Journée complète | M = Matin | AM = Après-midi
       </div>
     </div>
   )
