@@ -22,7 +22,43 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* =============================================================================
+   UI UTILITY CLASSES
+   ============================================================================= */
+
+/* Buttons */
+.btn-primary {
+  @apply px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md
+         hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+         focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300
+         rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500
+         focus:ring-offset-2 transition-colors;
+}
+
+.btn-ghost {
+  @apply px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100
+         rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500
+         focus:ring-offset-2 transition-colors;
+}
+
+.btn-danger {
+  @apply px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md
+         hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500
+         focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Inputs */
+.input-field {
+  @apply block w-full rounded-md border border-gray-300 bg-white px-3 py-2
+         text-gray-900 shadow-sm placeholder:text-gray-400
+         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
 
 /* Print-only elements (hidden on screen) */
@@ -32,6 +68,19 @@ body {
 
 /* Print Styles */
 @media print {
+  /* Print color palette - centralized for maintenance */
+  :root {
+    --print-border: black;
+    --print-text-primary: black;
+    --print-text-secondary: #666;
+    --print-text-muted: #999;
+    --print-text-dark: #333;
+    --print-text-medium: #444;
+    --print-bg-header: #e0e0e0;
+    --print-bg-light: #f5f5f5;
+    --print-bg-subtle: #f0f0f0;
+  }
+
   /* Show print-only elements */
   .print-only {
     display: block !important;
@@ -52,7 +101,7 @@ body {
 
   .tableau-comptage th,
   .tableau-comptage td {
-    border: 1px solid #000;
+    border: 1px solid var(--print-border);
     padding: 4px;
   }
 
@@ -93,14 +142,14 @@ body {
 
   .planning-print-table th,
   .planning-print-table td {
-    border: 1px solid #000;
+    border: 1px solid var(--print-border);
     padding: 4px 6px;
     text-align: center;
     vertical-align: top;
   }
 
   .planning-print-table th {
-    background-color: #f0f0f0 !important;
+    background-color: var(--print-bg-subtle) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-weight: bold;
@@ -119,7 +168,7 @@ body {
   .planning-print-table .ouvrier-type {
     font-size: 8px;
     font-style: italic;
-    color: #666;
+    color: var(--print-text-secondary);
   }
 
   .planning-print-table .cell-chantier {
@@ -128,7 +177,7 @@ body {
 
   .planning-print-table .cell-periode {
     font-size: 8px;
-    color: #666;
+    color: var(--print-text-secondary);
     margin-top: 2px;
   }
 
@@ -136,7 +185,7 @@ body {
     text-align: center;
     font-size: 10px;
     margin-top: 10px;
-    border-top: 1px solid #000;
+    border-top: 1px solid var(--print-border);
     padding-top: 5px;
   }
 
@@ -169,26 +218,26 @@ body {
     font-size: 16px;
     font-weight: normal;
     margin-bottom: 30px;
-    color: #333;
+    color: var(--print-text-dark);
   }
 
   .printable-ouvrier-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    border: 3px solid #000;
+    border: 3px solid var(--print-border);
   }
 
   .printable-ouvrier-table th,
   .printable-ouvrier-table td {
-    border: 2px solid #000;
+    border: 2px solid var(--print-border);
     padding: 12px 8px;
     text-align: center;
     vertical-align: middle;
   }
 
   .printable-ouvrier-table th {
-    background-color: #e0e0e0 !important;
+    background-color: var(--print-bg-header) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-weight: bold;
@@ -201,7 +250,7 @@ body {
     width: 180px;
     min-width: 180px;
     vertical-align: middle;
-    background-color: #f5f5f5 !important;
+    background-color: var(--print-bg-light) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     padding: 15px 12px;
@@ -215,7 +264,7 @@ body {
 
   .printable-ouvrier-table .week-dates {
     font-size: 18px;
-    color: #444;
+    color: var(--print-text-medium);
     margin-top: 4px;
   }
 
@@ -235,7 +284,7 @@ body {
 
   .printable-ouvrier-table .cell-periode {
     font-size: 12px;
-    color: #444;
+    color: var(--print-text-medium);
     margin-top: 2px;
   }
 
@@ -244,7 +293,7 @@ body {
     font-size: 14px;
     margin-top: 25px;
     padding-top: 15px;
-    border-top: 2px solid #000;
+    border-top: 2px solid var(--print-border);
     font-weight: 500;
   }
 
@@ -272,26 +321,26 @@ body {
     font-size: 16px;
     font-weight: normal;
     margin-bottom: 30px;
-    color: #333;
+    color: var(--print-text-dark);
   }
 
   .printable-chantier-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    border: 3px solid #000;
+    border: 3px solid var(--print-border);
   }
 
   .printable-chantier-table th,
   .printable-chantier-table td {
-    border: 2px solid #000;
+    border: 2px solid var(--print-border);
     padding: 12px 8px;
     text-align: center;
     vertical-align: middle;
   }
 
   .printable-chantier-table th {
-    background-color: #e0e0e0 !important;
+    background-color: var(--print-bg-header) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-weight: bold;
@@ -304,7 +353,7 @@ body {
     width: 180px;
     min-width: 180px;
     vertical-align: middle;
-    background-color: #f5f5f5 !important;
+    background-color: var(--print-bg-light) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     padding: 15px 12px;
@@ -318,7 +367,7 @@ body {
 
   .printable-chantier-table .week-dates {
     font-size: 18px;
-    color: #444;
+    color: var(--print-text-medium);
     margin-top: 4px;
   }
 
@@ -339,7 +388,7 @@ body {
 
   .printable-chantier-table .cell-aucun {
     font-style: normal;
-    color: #999;
+    color: var(--print-text-muted);
     font-size: 16px;
   }
 
@@ -348,7 +397,7 @@ body {
     font-size: 14px;
     margin-top: 25px;
     padding-top: 15px;
-    border-top: 2px solid #000;
+    border-top: 2px solid var(--print-border);
     font-weight: 500;
   }
 }

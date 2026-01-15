@@ -53,7 +53,7 @@ export function ChantierForm({ chantier, onSuccess, onCancel }: ChantierFormProp
           placeholder="Entrez le nom du chantier"
           required
           maxLength={200}
-          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 input-field"
         />
       </div>
 
@@ -65,7 +65,7 @@ export function ChantierForm({ chantier, onSuccess, onCancel }: ChantierFormProp
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="flex-1 btn-primary"
         >
           {isPending ? 'En cours...' : isEdit ? 'Modifier' : 'Créer'}
         </button>
@@ -73,7 +73,7 @@ export function ChantierForm({ chantier, onSuccess, onCancel }: ChantierFormProp
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="flex-1 btn-secondary"
           >
             Annuler
           </button>

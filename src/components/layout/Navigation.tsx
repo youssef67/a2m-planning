@@ -37,7 +37,7 @@ export function Navigation() {
               key={link.href}
               href={link.href}
               className={clsx(
-                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
                 active
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -54,7 +54,7 @@ export function Navigation() {
       <button
         type="button"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
       >
         {mobileMenuOpen ? (
@@ -77,7 +77,7 @@ export function Navigation() {
                   href={link.href}
                   onClick={closeMobileMenu}
                   className={clsx(
-                    'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500',
                     active
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'

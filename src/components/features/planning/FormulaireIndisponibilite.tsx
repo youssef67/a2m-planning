@@ -68,7 +68,7 @@ export function FormulaireIndisponibilite({
           required
           disabled={isEditMode}
           defaultValue={indisponibilite?.ouvrierId ?? defaultOuvrierId ?? ''}
-          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="mt-1 input-field disabled:bg-gray-100 disabled:cursor-not-allowed"
         >
           <option value="">Sélectionner un ouvrier</option>
           {ouvriers.map((ouvrier) => (
@@ -90,7 +90,7 @@ export function FormulaireIndisponibilite({
           defaultValue={defaultDateValue}
           required
           disabled={isEditMode}
-          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="mt-1 input-field disabled:bg-gray-100 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -139,7 +139,7 @@ export function FormulaireIndisponibilite({
           name="statutPresence"
           required
           defaultValue={indisponibilite?.statutPresence ?? ''}
-          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 input-field"
         >
           <option value="">Sélectionner un statut</option>
           {STATUTS.map((statut) => (
