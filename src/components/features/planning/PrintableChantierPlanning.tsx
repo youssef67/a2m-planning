@@ -1,10 +1,6 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import {
-  formatPeriodePrint,
-  getThreeWeeksRange,
-  type WeekData
-} from '@/lib/print-planning-utils'
+import { getThreeWeeksRange, type WeekData } from '@/lib/print-planning-utils'
 import type { Periode, TypeOuvrier } from '@/generated/prisma/client'
 
 interface OuvrierData {
@@ -34,11 +30,6 @@ interface PrintableChantierPlanningProps {
 
 const joursAbrevies = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-interface CellOuvrier {
-  nom: string
-  periode: string
-}
-
 export function PrintableChantierPlanning({
   chantier,
   weekStart
@@ -52,20 +43,12 @@ export function PrintableChantierPlanning({
     return `Planning du ${debut} au ${fin}`
   }
 
-  const getCellContent = (day: Date): CellOuvrier[] => {
+  const getOuvrierCount = (day: Date): number => {
     const dayStr = format(day, 'yyyy-MM-dd')
     const affectationsJour = chantier.affectations.filter(
       (a) => format(new Date(a.date), 'yyyy-MM-dd') === dayStr
     )
-
-    if (affectationsJour.length === 0) {
-      return [{ nom: 'Aucun', periode: '' }]
-    }
-
-    return affectationsJour.map((a) => ({
-      nom: a.ouvrier.nom,
-      periode: formatPeriodePrint(a.periode)
-    }))
+    return affectationsJour.length
   }
 
   const formatWeekLabel = (week: WeekData) => {
@@ -111,16 +94,13 @@ export function PrintableChantierPlanning({
                 <div className="week-dates">{formatWeekLabel(week)}</div>
               </td>
               {week.days.map((day, dayIndex) => {
-                const ouvriers = getCellContent(day)
-                const isAucun = ouvriers.length === 1 && ouvriers[0].nom === 'Aucun'
+                const count = getOuvrierCount(day)
                 return (
                   <td key={dayIndex}>
                     <div className="cell-content">
-                      {ouvriers.map((o, idx) => (
-                        <div key={idx} className={isAucun ? 'cell-aucun' : 'cell-ouvrier'}>
-                          {o.nom}{o.periode && ` ${o.periode}`}
-                        </div>
-                      ))}
+                      <div className={count === 0 ? 'cell-aucun' : 'cell-ouvrier'}>
+                        {count}
+                      </div>
                     </div>
                   </td>
                 )
@@ -132,7 +112,7 @@ export function PrintableChantierPlanning({
 
       {/* Legend */}
       <div className="printable-chantier-legend">
-        LÉGENDE : (vide) = Journée complète | M = Matin | AM = Après-midi
+        Nombre d'ouvriers présents par jour
       </div>
     </div>
   )
