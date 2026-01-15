@@ -63,7 +63,7 @@ export function PrintableWeeklyPlanning({
     }
 
     return {
-      nom: formatChantierNom(affectation.chantier.nom),
+      nom: formatChantierNom(affectation.chantier.nom, 15),
       periode: formatPeriode(affectation.periode)
     }
   }

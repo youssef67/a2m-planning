@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format } from 'date-fns'
+import { startOfWeek, endOfWeek, eachDayOfInterval, parseISO, isValid, format, addWeeks } from 'date-fns'
 import { getOuvriersPlanningAvecAffectations, getOuvriersIndisponibles } from '@/queries/affectations'
 import { getChantiersNonTermines } from '@/queries/chantiers'
 import { NavigationOnglets } from '@/components/features/planning/NavigationOnglets'
@@ -35,9 +35,13 @@ function getWeekDates(semaineParam?: string) {
 async function PlanningContent({ semaine }: { semaine?: string }) {
   const { weekStart, weekEnd, days } = getWeekDates(semaine)
 
-  // Fetch ouvriers and chantiers in parallel
-  const [ouvriers, chantiersNonTermines] = await Promise.all([
+  // Calculate 3-week range for print
+  const threeWeekEnd = endOfWeek(addWeeks(weekStart, 2), { weekStartsOn: 1 })
+
+  // Fetch ouvriers (1 week for display, 3 weeks for print) and chantiers in parallel
+  const [ouvriers, ouvriersThreeWeeks, chantiersNonTermines] = await Promise.all([
     getOuvriersPlanningAvecAffectations(weekStart, weekEnd),
+    getOuvriersPlanningAvecAffectations(weekStart, threeWeekEnd),
     getChantiersNonTermines()
   ])
 
@@ -62,6 +66,8 @@ async function PlanningContent({ semaine }: { semaine?: string }) {
         joursSemaine={days}
         chantiersNonTermines={chantiersNonTermines}
         indisponiblesByDate={indisponiblesByDate}
+        weekStart={weekStart}
+        ouvriersThreeWeeks={ouvriersThreeWeeks}
       />
       <PrintableWeeklyPlanning
         ouvriers={ouvriers}

@@ -4,6 +4,7 @@ import { memo } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { clsx } from 'clsx'
+import { Printer } from 'lucide-react'
 import type { Periode, StatutPresence, StatutChantier, TypeOuvrier } from '@/generated/prisma/client'
 import { CarteAffectationOuvrier } from './CarteAffectationOuvrier'
 
@@ -33,6 +34,7 @@ interface PlanningOuvrierRowProps {
   onClickIndisponibilite?: (ouvrier: OuvrierWithAffectations, affectation: AffectationData) => void
   onClickAffectation?: (ouvrier: OuvrierWithAffectations, affectation: AffectationData, event: React.MouseEvent) => void
   onClickCelluleVide?: (ouvrierId: number, ouvrierNom: string, date: Date) => void
+  onPrintSingle?: (ouvrierId: number) => void
 }
 
 export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
@@ -40,7 +42,8 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
   joursSemaine,
   onClickIndisponibilite,
   onClickAffectation,
-  onClickCelluleVide
+  onClickCelluleVide,
+  onPrintSingle
 }: PlanningOuvrierRowProps) {
   const isSousTraitant = ouvrier.type === 'SOUS_TRAITANT'
 
@@ -73,6 +76,17 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
         </h3>
         {isSousTraitant && (
           <span title="Sous-traitant" className="text-orange-600">🔧</span>
+        )}
+        {onPrintSingle && (
+          <button
+            type="button"
+            onClick={() => onPrintSingle(ouvrier.id)}
+            className="ml-auto p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors no-print"
+            aria-label={`Imprimer le planning de ${ouvrier.prenom} ${ouvrier.nom}`}
+            title="Imprimer ce planning"
+          >
+            <Printer className="h-4 w-4" />
+          </button>
         )}
       </div>
 

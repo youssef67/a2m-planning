@@ -122,4 +122,73 @@ describe('PlanningOuvrierHeader', () => {
       expect(mockOnOpenIndispo).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('Bouton Tout imprimer (Story 2.17)', () => {
+    it('affiche le bouton "Tout imprimer" dans l\'en-tête (AC: 1)', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+
+      render(<PlanningOuvrierHeader ouvriers={ouvriers} />)
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      expect(boutonPrint).toBeInTheDocument()
+    })
+
+    it('le bouton Tout imprimer a un style vert distinct', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+
+      render(<PlanningOuvrierHeader ouvriers={ouvriers} />)
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      expect(boutonPrint.className).toContain('green')
+    })
+
+    it('déclenche onPrintAll au clic sur le bouton Tout imprimer (AC: 3)', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+      const mockOnPrintAll = vi.fn()
+
+      render(
+        <PlanningOuvrierHeader
+          ouvriers={ouvriers}
+          onPrintAll={mockOnPrintAll}
+        />
+      )
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      fireEvent.click(boutonPrint)
+
+      expect(mockOnPrintAll).toHaveBeenCalledTimes(1)
+    })
+
+    it('les trois boutons coexistent et fonctionnent indépendamment', () => {
+      const ouvriers: Array<{ type: TypeOuvrier }> = [{ type: 'SALARIE' }]
+      const mockOnOpenAffectation = vi.fn()
+      const mockOnOpenIndispo = vi.fn()
+      const mockOnPrintAll = vi.fn()
+
+      render(
+        <PlanningOuvrierHeader
+          ouvriers={ouvriers}
+          onOpenAffectationModal={mockOnOpenAffectation}
+          onOpenIndisponibiliteModal={mockOnOpenIndispo}
+          onPrintAll={mockOnPrintAll}
+        />
+      )
+
+      const boutonPlus = screen.getByRole('button', { name: /affectation/i })
+      const boutonIndispo = screen.getByRole('button', { name: /indisponibilité/i })
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+
+      fireEvent.click(boutonPlus)
+      expect(mockOnOpenAffectation).toHaveBeenCalledTimes(1)
+      expect(mockOnOpenIndispo).not.toHaveBeenCalled()
+      expect(mockOnPrintAll).not.toHaveBeenCalled()
+
+      fireEvent.click(boutonIndispo)
+      expect(mockOnOpenIndispo).toHaveBeenCalledTimes(1)
+      expect(mockOnPrintAll).not.toHaveBeenCalled()
+
+      fireEvent.click(boutonPrint)
+      expect(mockOnPrintAll).toHaveBeenCalledTimes(1)
+    })
+  })
 })

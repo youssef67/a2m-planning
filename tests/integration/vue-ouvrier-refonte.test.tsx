@@ -60,6 +60,7 @@ function createOuvrier(id: number, nom: string, prenom: string, type: TypeOuvrie
 
 describe('Vue Ouvrier Refonte - Integration', () => {
   const joursSemaine = getWeekDays()
+  const weekStart = joursSemaine[0]
   const chantiersNonTermines = [
     { id: 1, nom: 'Chantier A', statut: 'ACTIF' as StatutChantier },
     { id: 2, nom: 'Chantier B', statut: 'EN_PAUSE' as StatutChantier }
@@ -77,6 +78,7 @@ describe('Vue Ouvrier Refonte - Integration', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -91,6 +93,7 @@ describe('Vue Ouvrier Refonte - Integration', () => {
         ouvriers={[]}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -108,6 +111,7 @@ describe('Vue Ouvrier Refonte - Integration', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -123,6 +127,7 @@ describe('Vue Ouvrier Refonte - Integration', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -152,6 +157,7 @@ describe('Vue Ouvrier Refonte - Integration', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 

@@ -11,6 +11,7 @@ import { AffectationOuvrierModal } from './AffectationOuvrierModal'
 import { AffectationOuvrierMultiModal } from './AffectationOuvrierMultiModal'
 import { IndisponibiliteMultiModal } from './IndisponibiliteMultiModal'
 import { MenuContextuelAffectation, type OptimisticUpdate } from './MenuContextuelAffectation'
+import { PrintableOuvrierPlanning } from './PrintableOuvrierPlanning'
 import type { Ouvrier, Affectation, Chantier, Periode, StatutPresence, StatutChantier } from '@/generated/prisma/client'
 
 type AffectationData = Pick<Affectation, 'id' | 'date' | 'periode' | 'statutPresence'> & {
@@ -51,6 +52,8 @@ interface VueOuvrierListeClientProps {
   joursSemaine: Date[]
   chantiersNonTermines: ChantierOption[]
   indisponiblesByDate?: IndisponibilitesMap
+  weekStart: Date
+  ouvriersThreeWeeks?: OuvrierWithAffectations[]
 }
 
 type DialogMode = 'create' | 'edit'
@@ -97,7 +100,9 @@ export function VueOuvrierListeClient({
   ouvriers: initialOuvriers,
   joursSemaine,
   chantiersNonTermines,
-  indisponiblesByDate = {}
+  indisponiblesByDate = {},
+  weekStart,
+  ouvriersThreeWeeks
 }: VueOuvrierListeClientProps) {
   const router = useRouter()
 
@@ -271,6 +276,30 @@ export function VueOuvrierListeClient({
     setIsIndispoModalOpen(false)
   }, [])
 
+  // Print handlers
+  const handlePrintAll = useCallback(() => {
+    // Show all printable elements
+    document.querySelectorAll('.printable-ouvrier').forEach((el) => {
+      el.classList.remove('print-hidden')
+    })
+    window.print()
+  }, [])
+
+  const handlePrintSingle = useCallback((ouvrierId: number) => {
+    // Hide all ouvriers except the one to print
+    document.querySelectorAll('.printable-ouvrier').forEach((el) => {
+      el.classList.add('print-hidden')
+    })
+    document.querySelector(`#printable-ouvrier-${ouvrierId}`)?.classList.remove('print-hidden')
+
+    window.print()
+
+    // Restore all after print
+    document.querySelectorAll('.printable-ouvrier').forEach((el) => {
+      el.classList.remove('print-hidden')
+    })
+  }, [])
+
   // Extract ouvriers for the modal (simplified version without affectations)
   const ouvriersActifs = initialOuvriers.map((o) => ({
     id: o.id,
@@ -297,6 +326,7 @@ export function VueOuvrierListeClient({
         ouvriers={initialOuvriers}
         onOpenAffectationModal={handleOpenMultiModal}
         onOpenIndisponibiliteModal={handleOpenIndispoModal}
+        onPrintAll={handlePrintAll}
       />
 
       <div className="space-y-4">
@@ -326,6 +356,7 @@ export function VueOuvrierListeClient({
               onClickIndisponibilite={handleClickIndisponibilite}
               onClickAffectation={handleClickAffectation}
               onClickCelluleVide={handleClickCelluleVide}
+              onPrintSingle={handlePrintSingle}
             />
           ))}
         </div>
@@ -382,6 +413,17 @@ export function VueOuvrierListeClient({
         semaineDebut={joursSemaine[0]}
         onRefresh={handleRefresh}
       />
+
+      {/* Print-only: Individual ouvrier planning pages (3 weeks) */}
+      <div className="print-only">
+        {(ouvriersThreeWeeks ?? initialOuvriers).map((ouvrier) => (
+          <PrintableOuvrierPlanning
+            key={ouvrier.id}
+            ouvrier={ouvrier}
+            weekStart={weekStart}
+          />
+        ))}
+      </div>
     </>
   )
 }

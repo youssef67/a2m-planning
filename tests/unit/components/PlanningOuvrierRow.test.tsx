@@ -133,4 +133,70 @@ describe('PlanningOuvrierRow', () => {
     const header = container.querySelector('.bg-orange-50')
     expect(header).toBeInTheDocument()
   })
+
+  describe('Bouton impression individuelle (Story 2.17)', () => {
+    it('affiche l\'icône d\'impression si onPrintSingle est fourni (AC: 2)', () => {
+      const ouvrier = createOuvrier()
+      const joursSemaine = getWeekDays()
+      const mockOnPrintSingle = vi.fn()
+
+      render(
+        <PlanningOuvrierRow
+          ouvrier={ouvrier}
+          joursSemaine={joursSemaine}
+          onPrintSingle={mockOnPrintSingle}
+        />
+      )
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      expect(boutonPrint).toBeInTheDocument()
+    })
+
+    it('n\'affiche pas l\'icône d\'impression si onPrintSingle n\'est pas fourni', () => {
+      const ouvrier = createOuvrier()
+      const joursSemaine = getWeekDays()
+
+      render(<PlanningOuvrierRow ouvrier={ouvrier} joursSemaine={joursSemaine} />)
+
+      const boutonPrint = screen.queryByRole('button', { name: /imprimer/i })
+      expect(boutonPrint).not.toBeInTheDocument()
+    })
+
+    it('déclenche onPrintSingle avec l\'ID ouvrier au clic (AC: 4)', () => {
+      const ouvrier = createOuvrier({ id: 42 })
+      const joursSemaine = getWeekDays()
+      const mockOnPrintSingle = vi.fn()
+
+      render(
+        <PlanningOuvrierRow
+          ouvrier={ouvrier}
+          joursSemaine={joursSemaine}
+          onPrintSingle={mockOnPrintSingle}
+        />
+      )
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      boutonPrint.click()
+
+      expect(mockOnPrintSingle).toHaveBeenCalledTimes(1)
+      expect(mockOnPrintSingle).toHaveBeenCalledWith(42)
+    })
+
+    it('le bouton d\'impression a la classe no-print', () => {
+      const ouvrier = createOuvrier()
+      const joursSemaine = getWeekDays()
+      const mockOnPrintSingle = vi.fn()
+
+      render(
+        <PlanningOuvrierRow
+          ouvrier={ouvrier}
+          joursSemaine={joursSemaine}
+          onPrintSingle={mockOnPrintSingle}
+        />
+      )
+
+      const boutonPrint = screen.getByRole('button', { name: /imprimer/i })
+      expect(boutonPrint.className).toContain('no-print')
+    })
+  })
 })

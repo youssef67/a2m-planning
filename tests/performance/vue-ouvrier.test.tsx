@@ -40,6 +40,7 @@ function generateOuvriers(count: number) {
 
 describe('Vue Ouvrier - Performance', () => {
   const joursSemaine = getWeekDays()
+  const weekStart = joursSemaine[0]
   const chantiersNonTermines = [
     { id: 1, nom: 'Chantier A', statut: 'ACTIF' as StatutChantier }
   ]
@@ -54,6 +55,7 @@ describe('Vue Ouvrier - Performance', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -74,6 +76,7 @@ describe('Vue Ouvrier - Performance', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 
@@ -103,6 +106,7 @@ describe('Vue Ouvrier - Performance', () => {
         ouvriers={ouvriers}
         joursSemaine={joursSemaine}
         chantiersNonTermines={chantiersNonTermines}
+        weekStart={weekStart}
       />
     )
 

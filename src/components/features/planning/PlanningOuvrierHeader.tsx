@@ -1,13 +1,14 @@
-import { Users, Wrench, Plus, CalendarOff } from 'lucide-react'
+import { Users, Wrench, Plus, CalendarOff, Printer } from 'lucide-react'
 import type { TypeOuvrier } from '@/generated/prisma/client'
 
 interface PlanningOuvrierHeaderProps {
   ouvriers: Array<{ type: TypeOuvrier }>
   onOpenAffectationModal?: () => void
   onOpenIndisponibiliteModal?: () => void
+  onPrintAll?: () => void
 }
 
-export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal, onOpenIndisponibiliteModal }: PlanningOuvrierHeaderProps) {
+export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal, onOpenIndisponibiliteModal, onPrintAll }: PlanningOuvrierHeaderProps) {
   const stats = {
     salaries: ouvriers.filter((o) => o.type === 'SALARIE').length,
     sousTraitants: ouvriers.filter((o) => o.type === 'SOUS_TRAITANT').length
@@ -42,6 +43,15 @@ export function PlanningOuvrierHeader({ ouvriers, onOpenAffectationModal, onOpen
           title="Indisponibilité multi-ouvriers"
         >
           <CalendarOff className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={onPrintAll}
+          className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          aria-label="Tout imprimer"
+          title="Imprimer tous les plannings"
+        >
+          <Printer className="h-5 w-5" />
         </button>
       </div>
     </div>
