@@ -26,7 +26,7 @@ export function BadgeOuvrier({ ouvrier, periode, onClick, className }: BadgeOuvr
   return (
     <div
       className={clsx(
-        'flex items-center justify-between px-2 py-1 rounded-md text-sm h-full',
+        'flex items-center justify-between px-2 py-2 rounded-md text-sm',
         'bg-gray-50 border border-gray-200',
         onClick && 'cursor-pointer hover:bg-gray-100 transition-colors',
         className

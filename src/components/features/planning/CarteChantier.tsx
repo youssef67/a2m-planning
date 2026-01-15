@@ -82,19 +82,18 @@ export function CarteChantier({ chantier, joursSemaine }: CarteChantierProps) {
           const affectations = affectationsByDay.get(key) || []
 
           return (
-            <div key={key} className="min-h-[80px] p-2 flex flex-col">
-              <div className="flex flex-col gap-1 flex-1">
+            <div key={key} className="min-h-[80px] p-2">
+              <div className="flex flex-col gap-1">
                 {affectations.map((affectation) => (
-                  <div key={affectation.id} className="flex-1 flex">
-                    <BadgeOuvrier
-                      ouvrier={affectation.ouvrier}
-                      periode={affectation.periode}
-                      className="w-full"
-                    />
-                  </div>
+                  <BadgeOuvrier
+                    key={affectation.id}
+                    ouvrier={affectation.ouvrier}
+                    periode={affectation.periode}
+                    className="w-full"
+                  />
                 ))}
                 {affectations.length === 0 && (
-                  <span className="text-xs text-gray-400 italic flex-1 flex items-center justify-center">-</span>
+                  <span className="text-xs text-gray-400 italic">-</span>
                 )}
               </div>
             </div>

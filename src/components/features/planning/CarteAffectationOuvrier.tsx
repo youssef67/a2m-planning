@@ -33,7 +33,7 @@ export function CarteAffectationOuvrier({ affectation, onClick, className }: Car
       tabIndex={isClickable ? 0 : undefined}
       onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={clsx(
-        'p-2 rounded-lg border text-sm h-full',
+        'p-2 rounded-lg border text-sm',
         isUnavailable
           ? 'bg-gray-50 border-gray-200'
           : 'bg-white border-gray-200 shadow-sm',

@@ -100,17 +100,16 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
             <div
               key={jour.toISOString()}
               className={clsx(
-                'min-h-[60px] p-2 relative flex flex-col',
+                'min-h-[60px] p-2 relative',
                 canAdd && onClickCelluleVide && 'cursor-pointer hover:bg-gray-50 transition-colors'
               )}
               onClick={() => handleCellClick(jour, affectations)}
             >
               {affectations.length > 0 ? (
-                <div className="flex flex-col gap-1 flex-1">
+                <div className="flex flex-col gap-1">
                   {affectations.map((affectation) => (
                     <div
                       key={affectation.id}
-                      className="flex-1 flex"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <CarteAffectationOuvrier
@@ -128,7 +127,7 @@ export const PlanningOuvrierRow = memo(function PlanningOuvrierRow({
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-gray-400 text-center py-2 flex-1 flex items-center justify-center">
+                <div className="text-xs text-gray-400 text-center py-2">
                   —
                 </div>
               )}

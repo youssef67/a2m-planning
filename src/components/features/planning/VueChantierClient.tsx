@@ -515,14 +515,13 @@ function ChantierCard({
           return (
             <div
               key={key}
-              className="min-h-[80px] p-2 cursor-pointer hover:bg-gray-50 transition-colors flex flex-col"
+              className="min-h-[80px] p-2 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => onClickCellule(chantier.id, chantier.nom, jour)}
             >
-              <div className="flex flex-col gap-1 flex-1">
+              <div className="flex flex-col gap-1">
                 {affectations.map((affectation) => (
                   <div
                     key={affectation.id}
-                    className="flex-1 flex"
                     onClick={(e) => {
                       e.stopPropagation()
                       onAffectationClick(affectation, chantier.id, e)
